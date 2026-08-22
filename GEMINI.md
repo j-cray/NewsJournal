@@ -72,9 +72,12 @@ cargo nextest run --all-targets --all-features
 
 Documentation must stay in sync with the codebase at all times. Whenever relevant during development, agents **must actively update**:
 
-1. **`docs/initialPlan.md` (Primary Implementation Roadmap)**:
+1. **`docs/initialPlan.md` (Primary Implementation Roadmap & Branch Workflow)**:
    - Agents **must follow `docs/initialPlan.md` sequentially** during implementation.
-   - After completing and verifying each subtask (e.g., via the verification loop), agents **must immediately update `docs/initialPlan.md` and tick off the corresponding checkbox (`- [x]`)**.
+   - **Branch-Per-Task Execution**: Every task/subtask from `docs/initialPlan.md` **must be developed on a separate dedicated Git branch** (e.g., `task/<phase>-<subtask>-<short-description>` or `feature/<task-name>`) branched off `main`.
+   - Never commit incomplete or unverified work directly to `main`.
+   - After completing the implementation and passing the full verification loop (format, clippy, tests), merge the task branch back into `main`.
+   - Immediately update `docs/initialPlan.md` and tick off the corresponding checkbox (`- [x]`) for the completed task.
    - If scope or design evolves, update the plan's specification and subtasks accordingly.
 2. **`docs/roadmap.md`**:
    - Maintain a living roadmap tracking project milestones, milestone statuses, current sprint tasks, architectural decision records (ADRs), and backlog items.
