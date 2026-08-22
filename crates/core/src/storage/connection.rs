@@ -35,3 +35,20 @@ pub fn open_in_memory_unmigrated() -> Result<Connection, StorageError> {
     configure_connection(&conn)?;
     Ok(conn)
 }
+
+/// Opens a file-backed SQLite database at the given path, configures pragmas, and applies migrations.
+pub fn open_file(path: impl AsRef<std::path::Path>) -> Result<Connection, StorageError> {
+    let path_ref = path.as_ref();
+    if let Some(parent) = path_ref.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| {
+            StorageError::InvalidData(format!(
+                "failed to create parent directories for database path '{}': {e}",
+                path_ref.display()
+            ))
+        })?;
+    }
+    let mut conn = Connection::open(path_ref)?;
+    configure_connection(&conn)?;
+    run_migrations(&mut conn)?;
+    Ok(conn)
+}
