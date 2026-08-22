@@ -1,6 +1,6 @@
 //! Unified thread-safe persistence and domain repository service.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use rusqlite::Connection;
@@ -14,6 +14,7 @@ use crate::storage::articles;
 use crate::storage::connection::{open_file, open_in_memory};
 use crate::storage::contacts;
 use crate::storage::error::StorageError;
+use crate::storage::paths::AppPaths;
 use crate::storage::settings;
 use crate::storage::tasks;
 
@@ -60,6 +61,31 @@ impl StorageService {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, StorageError> {
         let conn = open_file(path)?;
         Ok(Self::new(conn))
+    }
+
+    /// Opens the default application SQLite database based on standard OS directory conventions
+    /// and active environment overrides (`NEWSJOURNAL_*`).
+    ///
+    /// Automatically ensures parent directories exist and runs all pending schema migrations.
+    pub fn open_default() -> Result<Self, StorageError> {
+        let paths = AppPaths::resolve()?;
+        Self::open_with_paths(&paths)
+    }
+
+    /// Opens the SQLite database configured by the specified `AppPaths`.
+    ///
+    /// Automatically ensures parent directories exist and runs all pending schema migrations.
+    pub fn open_with_paths(paths: &AppPaths) -> Result<Self, StorageError> {
+        paths.ensure_data_dir()?;
+        let db_path = paths.database_path();
+        Self::open(db_path)
+    }
+
+    /// Resolves the default SQLite database path according to operating system conventions
+    /// and active environment variables.
+    pub fn default_database_path() -> Result<PathBuf, StorageError> {
+        let paths = AppPaths::resolve()?;
+        Ok(paths.database_path())
     }
 
     /// Creates a `StorageService` from an existing shared `Arc<Mutex<Connection>>`.

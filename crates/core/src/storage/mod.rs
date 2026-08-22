@@ -9,6 +9,7 @@ pub mod connection;
 pub mod contacts;
 pub mod error;
 pub mod migration;
+pub mod paths;
 pub mod service;
 pub mod settings;
 pub mod tasks;
@@ -17,6 +18,10 @@ pub use connection::{configure_connection, open_file, open_in_memory, open_in_me
 pub use error::StorageError;
 pub use migration::{
     run_migrations, AppliedMigration, Migration, MigrationReport, MigrationRunner, MIGRATIONS,
+};
+pub use paths::{
+    AppPaths, APPLICATION, DEFAULT_DB_FILENAME, ENV_CACHE_DIR, ENV_CONFIG_DIR, ENV_DATA_DIR,
+    ENV_DB_PATH, ENV_STATE_DIR, ORGANIZATION, QUALIFIER,
 };
 pub use service::StorageService;
 

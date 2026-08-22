@@ -11,8 +11,9 @@ pub mod validation;
 
 pub use storage::{
     configure_connection, open_file, open_in_memory, open_in_memory_unmigrated, run_migrations,
-    AppliedMigration, Migration, MigrationReport, MigrationRunner, StorageError, StorageService,
-    MIGRATIONS,
+    AppPaths, AppliedMigration, Migration, MigrationReport, MigrationRunner, StorageError,
+    StorageService, APPLICATION, DEFAULT_DB_FILENAME, ENV_CACHE_DIR, ENV_CONFIG_DIR, ENV_DATA_DIR,
+    ENV_DB_PATH, ENV_STATE_DIR, MIGRATIONS, ORGANIZATION, QUALIFIER,
 };
 
 pub use color::{
@@ -89,5 +90,8 @@ mod tests {
 
         let in_memory = open_in_memory();
         assert!(in_memory.is_ok());
+
+        let paths = AppPaths::resolve();
+        assert!(paths.is_ok());
     }
 }
