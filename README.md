@@ -80,7 +80,7 @@ cargo nextest run --all-targets --all-features
 
 ## AI Agent & Living Documentation Guidelines
 
-All agentic AI assistants (Gemini, Claude, Copilot, etc.) and human contributors follow the principles in [GEMINI.md](file:///home/icarus/dev/templates/rust-project-template/GEMINI.md):
+All agentic AI assistants (Gemini, Claude, Copilot, etc.) and human contributors follow the principles in [GEMINI.md](GEMINI.md):
 
 1. **Test-First**: Write unit, integration, and edge-case tests liberally before and alongside code.
 2. **Modularity**: Prefer small, single-responsibility files and short functions over monolithic files.
