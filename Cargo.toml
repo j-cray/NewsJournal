@@ -21,3 +21,4 @@ uuid = { version = "1.10", features = ["v4", "serde"] }
 thiserror = "2.0"
 rusqlite = { version = "0.32", features = ["bundled", "chrono", "uuid"] }
 directories = "5.0"
+proptest = "1.5"
