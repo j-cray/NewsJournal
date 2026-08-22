@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-and-test:
+    name: Lint, Format & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for Cargo.toml
+        id: check-cargo
+        run: |
+          if [ -f Cargo.toml ]; then
+            echo "has_cargo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_cargo=false" >> "$GITHUB_OUTPUT"
+            echo "::notice ::No Cargo.toml found. Skipping Rust CI checks (template repository state)."
+          fi
+
+      - name: Install Rust nightly toolchain
+        if: steps:check-cargo.outputs.has_cargo == 'true'
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt, clippy
+
+      - name: Install cargo-nextest
+        if: steps:check-cargo.outputs.has_cargo == 'true'
+        uses: taiki-e/install-action@nextest
+
+      - name: Rust Cache
+        if: steps:check-cargo.outputs.has_cargo == 'true'
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check code formatting
+        if: steps:check-cargo.outputs.has_cargo == 'true'
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy lints
+        if: steps:check-cargo.outputs.has_cargo == 'true'
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run tests with nextest
+        if: steps:check-cargo.outputs.has_cargo == 'true'
+        run: cargo nextest run --all-targets --all-features
