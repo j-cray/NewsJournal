@@ -63,6 +63,14 @@ pub enum StorageError {
     /// Conflict on unique constraint (e.g. duplicate slug).
     #[error("conflict error: {0}")]
     Conflict(String),
+
+    /// Standard I/O error during directory or file operations.
+    #[error("i/o error: {0}")]
+    Io(#[from] std::io::Error),
+
+    /// Cross-platform application directory path resolution error.
+    #[error("path resolution error: {0}")]
+    PathResolution(String),
 }
 
 impl StorageError {
