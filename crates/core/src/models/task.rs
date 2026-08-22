@@ -218,6 +218,18 @@ impl Task {
             None => false,
         }
     }
+
+    /// Returns the comprehensive evaluated deadline status for this task.
+    #[must_use]
+    pub fn deadline_status(&self, current_time: DateTime<Utc>) -> crate::deadline::DeadlineStatus {
+        crate::deadline::evaluate_task_deadline(self, current_time)
+    }
+
+    /// Returns `true` if the task has an upcoming due date within the warning window.
+    #[must_use]
+    pub fn is_due_soon(&self, current_time: DateTime<Utc>) -> bool {
+        crate::deadline::is_task_due_soon(self, current_time, None)
+    }
 }
 
 /// Fluent builder for creating a `Task`.
