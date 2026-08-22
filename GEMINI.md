@@ -68,16 +68,19 @@ cargo nextest run --all-targets --all-features
 
 ---
 
-## 4. Living Documentation Requirements
+## 4. Living Documentation & Plan Tracking Requirements
 
 Documentation must stay in sync with the codebase at all times. Whenever relevant during development, agents **must actively update**:
 
-1. **`README.md`**:
-   - Update getting started steps, prerequisites, project overview, architectural summaries, and CLI/API usage examples whenever capabilities change.
+1. **`docs/initialPlan.md` (Primary Implementation Roadmap)**:
+   - Agents **must follow `docs/initialPlan.md` sequentially** during implementation.
+   - After completing and verifying each subtask (e.g., via the verification loop), agents **must immediately update `docs/initialPlan.md` and tick off the corresponding checkbox (`- [x]`)**.
+   - If scope or design evolves, update the plan's specification and subtasks accordingly.
 2. **`docs/roadmap.md`**:
-   - Maintain a living roadmap tracking project milestones, upcoming goals, current sprint tasks, architectural decision records (ADRs), and backlog items.
-   - If the `docs/` directory or `docs/roadmap.md` does not yet exist when project planning or development begins, create it and document the project's trajectory.
-3. **`GEMINI.md`** (This file):
+   - Maintain a living roadmap tracking project milestones, milestone statuses, current sprint tasks, architectural decision records (ADRs), and backlog items.
+3. **`README.md`**:
+   - Update getting started steps, prerequisites, project overview, architectural summaries, and CLI/API usage examples whenever capabilities change.
+4. **`GEMINI.md`** (This file):
    - Update this file whenever project-specific architectural patterns, specialized build flags, custom environment variables, new verification tooling, or updated agent instructions are established.
 
 ---
