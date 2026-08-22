@@ -14,7 +14,7 @@ This document serves as the living roadmap tracking project milestones, current 
 
 | Phase | Description | Status | Target Platforms |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | Workspace Setup & Core Domain Models (`newsjournal-core`) | 🔄 In Progress | All |
+| **Phase 1** | Workspace Setup & Core Domain Models (`newsjournal-core`) | ✅ Complete | All |
 | **Phase 2** | SQLite Persistence Engine & Migrations | ⏳ In Planning | All |
 | **Phase 3** | GUI Scaffolding & Cross-Platform Glass Architecture | ⏳ In Planning | Linux & macOS |
 | **Phase 4** | Vertical Left Navigation Bar & Settings / Theme Engine | ⏳ In Planning | Linux & macOS |
@@ -57,6 +57,7 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement strict slug, contact, and field validation engine.
 - [x] Implement deterministic color palette generator avoiding unreadable colors (such as light yellow).
 - [x] Implement real-time deadline evaluation, overdue tracking engine, and batch urgency summary engine.
+- [x] Implement comprehensive generative property-based tests (`proptest`) and state machine test suites.
 - [ ] Implement SQLite schema migrations and CRUD repository with unit tests.
 - [ ] Setup `libcosmic` Linux and `iced` macOS window targets.
 

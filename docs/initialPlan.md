@@ -42,7 +42,7 @@ Based on the architectural alignment and design interview:
 - [x] **1.4 Color Palette Generator**: Hash-based deterministic assignment selecting from a high-contrast, accessible color palette (excluding low-contrast/light yellow shades) with RGB/Hex conversions.
 - [x] **1.5 Overdue Engine**: Logic to evaluate deadline expiration against current timestamp, automatically excluding articles in `Published` stage.
 
-- [ ] **1.6 Core Unit & Property Tests**: TDD test suite covering validation, color generation, status transitions, and overdue calculations.
+- [x] **1.6 Core Unit & Property Tests**: TDD test suite covering validation, color generation, status transitions, and overdue calculations.
 
 ### Phase 2: Persistence Engine & Database Migrations (SQLite)
 - [ ] **2.1 Migration Runner**: Embedded SQL migration scripts creating tables (`articles`, `tasks`, `contacts`, `article_contacts`, `settings`) and indexes.
