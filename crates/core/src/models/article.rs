@@ -289,6 +289,18 @@ impl Article {
             None => false,
         }
     }
+
+    /// Returns the comprehensive evaluated deadline status for this article.
+    #[must_use]
+    pub fn deadline_status(&self, current_time: DateTime<Utc>) -> crate::deadline::DeadlineStatus {
+        crate::deadline::evaluate_article_deadline(self, current_time)
+    }
+
+    /// Returns `true` if the article has an upcoming deadline within the warning window.
+    #[must_use]
+    pub fn is_due_soon(&self, current_time: DateTime<Utc>) -> bool {
+        crate::deadline::is_article_due_soon(self, current_time, None)
+    }
 }
 
 /// Fluent builder for creating an `Article`.
