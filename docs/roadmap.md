@@ -55,7 +55,8 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Initialize Cargo workspace with `newsjournal-core` and `newsjournal-gui`.
 - [x] Implement core domain entities (`Article`, `Task`, `Contact`, `ArticleContact`, `Settings`) and stage/status transitions.
 - [x] Implement strict slug, contact, and field validation engine.
-- [ ] Implement deterministic color palette generator avoiding unreadable colors (such as light yellow).
+- [x] Implement deterministic color palette generator avoiding unreadable colors (such as light yellow).
 - [ ] Implement SQLite schema migrations and CRUD repository with unit tests.
 - [ ] Setup `libcosmic` Linux and `iced` macOS window targets.
+
 

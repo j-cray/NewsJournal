@@ -2,6 +2,7 @@
 
 use thiserror::Error;
 
+use crate::color::ColorError;
 use crate::validation::ValidationError;
 
 /// Errors that can occur during domain model parsing and operations.
@@ -22,4 +23,8 @@ pub enum ModelError {
     /// Validation failure on entity fields or format constraints.
     #[error("validation error: {0}")]
     Validation(#[from] ValidationError),
+
+    /// Color parsing, conversion, or palette error.
+    #[error("color error: {0}")]
+    Color(#[from] ColorError),
 }

@@ -7,6 +7,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::color::{assign_color_for_slug, Color};
 use crate::error::ModelError;
 use crate::validation::{validate_headline, validate_hex_color, validate_slug, ValidationError};
 
@@ -226,6 +227,30 @@ impl Article {
         self
     }
 
+    /// Automatically sets the color accent based on the deterministic palette assignment for this article's slug.
+    pub fn with_auto_color(mut self) -> Self {
+        self.color = Some(assign_color_for_slug(&self.slug).to_hex());
+        self
+    }
+
+    /// Deterministically resolves the article's color.
+    ///
+    /// If an explicit valid hex color is stored on this record, it is parsed and returned.
+    /// Otherwise, a fallback deterministic color is generated from the article's slug.
+    #[must_use]
+    pub fn color_or_default(&self) -> Color {
+        self.color
+            .as_deref()
+            .and_then(|c| Color::from_hex(c).ok())
+            .unwrap_or_else(|| assign_color_for_slug(&self.slug))
+    }
+
+    /// Updates the color to the deterministic default for the slug and touches `updated_at`.
+    pub fn assign_default_color(&mut self) {
+        self.color = Some(assign_color_for_slug(&self.slug).to_hex());
+        self.touch();
+    }
+
     /// Updates the `updated_at` timestamp to the current UTC time.
     pub fn touch(&mut self) {
         self.updated_at = Utc::now();
@@ -323,6 +348,12 @@ impl ArticleBuilder {
     /// Sets the color accent.
     pub fn color(mut self, color: impl Into<String>) -> Self {
         self.color = Some(color.into());
+        self
+    }
+
+    /// Automatically sets the color accent using the deterministic palette generator.
+    pub fn auto_color(mut self) -> Self {
+        self.color = Some(assign_color_for_slug(&self.slug).to_hex());
         self
     }
 
