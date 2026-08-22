@@ -56,6 +56,7 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement core domain entities (`Article`, `Task`, `Contact`, `ArticleContact`, `Settings`) and stage/status transitions.
 - [x] Implement strict slug, contact, and field validation engine.
 - [x] Implement deterministic color palette generator avoiding unreadable colors (such as light yellow).
+- [x] Implement real-time deadline evaluation, overdue tracking engine, and batch urgency summary engine.
 - [ ] Implement SQLite schema migrations and CRUD repository with unit tests.
 - [ ] Setup `libcosmic` Linux and `iced` macOS window targets.
 
