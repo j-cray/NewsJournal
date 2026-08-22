@@ -45,7 +45,7 @@ Based on the architectural alignment and design interview:
 - [x] **1.6 Core Unit & Property Tests**: TDD test suite covering validation, color generation, status transitions, and overdue calculations.
 
 ### Phase 2: Persistence Engine & Database Migrations (SQLite)
-- [ ] **2.1 Migration Runner**: Embedded SQL migration scripts creating tables (`articles`, `tasks`, `contacts`, `article_contacts`, `settings`) and indexes.
+- [x] **2.1 Migration Runner**: Embedded SQL migration scripts creating tables (`articles`, `tasks`, `contacts`, `article_contacts`, `settings`) and indexes.
 - [ ] **2.2 Repository Layer (`StorageService`)**:
   - CRUD operations for Articles with transactional slug uniqueness guarantees.
   - CRUD operations for Tasks with parent article cascading/integrity checks.
