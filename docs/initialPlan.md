@@ -51,7 +51,7 @@ Based on the architectural alignment and design interview:
   - CRUD operations for Tasks with parent article cascading/integrity checks.
   - CRUD operations for Contacts and tagging relationships (`link_contact_to_article`, `unlink_contact_from_article`, `list_article_contacts`).
   - Read/Write operations for application settings.
-- [ ] **2.3 App Directory Resolution**: Cross-platform configuration path locator using `directories` crate (`~/.local/share/newsjournal` on Linux, `~/Library/Application Support/newsjournal` on macOS).
+- [x] **2.3 App Directory Resolution**: Cross-platform configuration path locator using `directories` crate (`~/.local/share/newsjournal` on Linux, `~/Library/Application Support/newsjournal` on macOS).
 - [ ] **2.4 Integration Tests**: In-memory SQLite repository tests validating queries, joins, cascade deletions, and relational integrity.
 
 ### Phase 3: GUI Framework & Platform Glass Rendering

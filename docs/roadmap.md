@@ -59,7 +59,8 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement real-time deadline evaluation, overdue tracking engine, and batch urgency summary engine.
 - [x] Implement comprehensive generative property-based tests (`proptest`) and state machine test suites.
 - [x] Implement `StorageService` CRUD repository layer with transactional integrity.
-- [ ] Setup app directory resolution (`directories` crate) and storage integration tests.
+- [x] Setup cross-platform app directory resolution (`directories` crate) and environment overrides (`NEWSJOURNAL_*`).
+- [ ] Implement Phase 2.4 integration test suite for full relational cascades and persistence lifecycle.
 - [ ] Setup `libcosmic` Linux and `iced` macOS window targets.
 
 

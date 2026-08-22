@@ -67,8 +67,9 @@ use newsjournal_core::color::{assign_color_for_slug, Color};
 use newsjournal_core::storage::StorageService;
 use newsjournal_core::{Article, ArticleStage, Contact, Task, TaskStatus};
 
-// Initialize SQLite storage service in-memory (or open from disk)
+// Initialize SQLite storage service in-memory (or open default app database on disk)
 let service = StorageService::in_memory()?;
+// Or: let service = StorageService::open_default()?; // uses OS app data directories
 
 // Create and persist an article
 let article = Article::new("city-budget-2026", "City Council Votes on Historic Transit Expansion")
