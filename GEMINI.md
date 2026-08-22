@@ -1,6 +1,28 @@
-# Rust Project & Agent Guidelines
+# NewsJournal: Project & Agent Guidelines
 
-This repository is a **Rust** project. Any agent or developer interacting with this codebase must adhere to the following development standards, verification protocols, architectural principles, and documentation practices.
+NewsJournal is a pure Rust desktop application targeting Linux and macOS designed to help journalists stay organized while reporting. It provides article Kanban workflows across editorial stages, linked task management, source/contact directories with article tagging, and deadline tracking with overdue alerts. The UI features a vertical left toolbar, in-app glass modal/drawer editing, mouse drag-and-drop card interaction, and platform-tailored glass visuals (**COSMIC Frosted Glass** on Linux via `libcosmic` and **Liquid Glass** on macOS via `iced` + native `window_vibrancy`).
+
+---
+
+## 0. Project Overview & Architecture
+
+### Key Subsystems & Workspace Structure
+- **`crates/core` (`newsjournal-core`)**:
+  - Pure Rust domain logic, entity models (`Article`, `Task`, `Contact`, `Settings`), strict slug/field validation.
+  - SQLite persistence layer using `rusqlite` with embedded SQL schema migrations.
+  - Deterministic color palette generator (hash-based, high-contrast, strictly excluding hard-to-read shades like light yellow).
+  - Real-time deadline and overdue evaluation engine (`now > deadline` and stage != `Published`).
+  - Comprehensive unit, integration, and property test suites.
+- **`crates/gui` (`newsjournal-gui`)**:
+  - Cross-platform desktop interface compiled with strict platform feature flags:
+    - `#[cfg(target_os = "linux")]`: `libcosmic` application wrapper with COSMIC frosted glass containers and COSMIC theme integration.
+    - `#[cfg(target_os = "macos")]`: `iced` application with `window_vibrancy` for macOS liquid glass / native vibrancy effects.
+  - Left vertical navigation bar (Articles Kanban, Tasks Kanban, Contacts Directory, Settings).
+  - Main Articles Kanban board (6 stages: Pitching, Researching, Writing, Editing, Ready to Publish, Published).
+  - Tasks Kanban board (3 stages: To-Do, In Progress, Complete), color-coded to parent articles.
+  - Contacts directory list with many-to-many article tagging.
+  - In-app glass modal / slide-over drawer for creating and editing entities.
+  - Theme engine supporting `System` (OS-inherited), `Light`, and `Dark` modes.
 
 ---
 
