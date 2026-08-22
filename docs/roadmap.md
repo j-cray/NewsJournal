@@ -16,7 +16,7 @@ This document serves as the living roadmap tracking project milestones, current 
 | :--- | :--- | :--- | :--- |
 | **Phase 1** | Workspace Setup & Core Domain Models (`newsjournal-core`) | ✅ Complete | All |
 | **Phase 2** | SQLite Persistence Engine & Migrations | ✅ Complete | All |
-| **Phase 3** | GUI Scaffolding & Cross-Platform Glass Architecture | ⏳ In Planning | Linux & macOS |
+| **Phase 3** | GUI Scaffolding & Cross-Platform Glass Architecture | 🟡 In Progress | Linux & macOS |
 | **Phase 4** | Vertical Left Navigation Bar & Settings / Theme Engine | ⏳ In Planning | Linux & macOS |
 | **Phase 5** | Articles Kanban Board (6 Production Stages) & Drag-and-Drop | ⏳ In Planning | Linux & macOS |
 | **Phase 6** | Article Creation & Edit Glass Modal / Drawer | ⏳ In Planning | Linux & macOS |
@@ -61,6 +61,7 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement `StorageService` CRUD repository layer with transactional integrity.
 - [x] Setup cross-platform app directory resolution (`directories` crate) and environment overrides (`NEWSJOURNAL_*`).
 - [x] Implement Phase 2.4 integration test suite for full relational cascades and persistence lifecycle.
+- [x] Implement `newsjournal-gui` scaffolding with shared `AppState`, `AppMessage`, reducer, and event loop.
 - [ ] Setup `libcosmic` Linux and `iced` macOS window targets.
 
 

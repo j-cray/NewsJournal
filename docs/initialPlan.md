@@ -55,7 +55,7 @@ Based on the architectural alignment and design interview:
 - [x] **2.4 Integration Tests**: In-memory SQLite repository tests validating queries, joins, cascade deletions, and relational integrity.
 
 ### Phase 3: GUI Framework & Platform Glass Rendering
-- [ ] **3.1 GUI Crate Scaffolding**: Setup `newsjournal-gui` with shared application state, message enums, and event loops.
+- [x] **3.1 GUI Crate Scaffolding**: Setup `newsjournal-gui` with shared application state, message enums, and event loops.
 - [ ] **3.2 Linux COSMIC Implementation (`#[cfg(target_os = "linux")]`)**:
   - Integrate `libcosmic` application wrapper.
   - Configure COSMIC frosted glass theme styling and background blur materials.

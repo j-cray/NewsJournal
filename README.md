@@ -88,6 +88,29 @@ let created_contact = service.create_contact(contact)?;
 service.link_contact_to_article(created.id, created_contact.id)?;
 ```
 
+### 4. GUI Event Loop Example Usage
+
+```rust
+use newsjournal_core::models::Article;
+use newsjournal_core::storage::StorageService;
+use newsjournal_gui::{AppMessage, AppState, EventLoop, NavTab};
+
+// Initialize GUI state wrapping storage
+let storage = StorageService::in_memory()?;
+let mut state = AppState::new(storage);
+state.load_all()?;
+
+let mut event_loop = EventLoop::new(state);
+
+// Dispatch navigation and CRUD actions
+event_loop.dispatch(AppMessage::NavigateTo(NavTab::ArticlesKanban))?;
+event_loop.dispatch(AppMessage::CreateArticle(
+    Article::new("port-expansion", "Port Expansion Cleared for Environmental Review")
+))?;
+
+assert_eq!(event_loop.state().articles.len(), 1);
+```
+
 ---
 
 
