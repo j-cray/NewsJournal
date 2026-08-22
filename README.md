@@ -27,8 +27,9 @@ A pure Rust desktop application for journalists to organize story workflows, man
 
 The project is structured as a Cargo workspace:
 
-- **`crates/core` (`newsjournal-core`)**: Pure Rust domain logic, entity models, validation engine, color palette generation, overdue calculations, and SQLite persistence.
+- **`crates/core` (`newsjournal-core`)**: Pure Rust domain logic, entity models, strict validation engine (URL-safe slugs, emails, E.164 phone numbers, names/headlines, and hex colors), color palette generation, overdue calculations, and SQLite persistence.
 - **`crates/gui` (`newsjournal-gui`)**: Cross-platform desktop application interface (`newsjournal` binary).
+
 
 ---
 
