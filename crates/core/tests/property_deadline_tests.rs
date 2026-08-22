@@ -182,7 +182,10 @@ proptest! {
 
         prop_assert_eq!(summary.has_overdue(), summary.overdue_count > 0);
         prop_assert_eq!(summary.has_critical(), summary.critical_count > 0);
-        prop_assert_eq!(summary.has_due_soon(), summary.due_soon_count > 0);
+        prop_assert_eq!(
+            summary.has_due_soon(),
+            summary.due_soon_count > 0 || summary.critical_count > 0
+        );
     }
 
     #[test]

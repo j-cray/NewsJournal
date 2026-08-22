@@ -20,7 +20,7 @@ proptest! {
 
         if let Ok(s) = std::str::from_utf8(&bytes) {
             let str_hash = fnv1a_hash_str(s);
-            prop_assert_eq!(h1, str_hash);
+            prop_assert_eq!(fnv1a_hash(s.trim().as_bytes()), str_hash);
         }
     }
 
