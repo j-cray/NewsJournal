@@ -122,6 +122,11 @@ impl Settings {
     pub fn touch(&mut self) {
         self.updated_at = Utc::now();
     }
+
+    /// Validates all field invariants of settings.
+    pub fn validate(&self) -> Result<(), crate::validation::ValidationError> {
+        Ok(())
+    }
 }
 
 impl Default for Settings {

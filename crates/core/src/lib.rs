@@ -4,11 +4,20 @@
 
 pub mod error;
 pub mod models;
+pub mod validation;
 
 pub use error::ModelError;
 pub use models::{
     Article, ArticleBuilder, ArticleContact, ArticleStage, Contact, ContactBuilder, Settings, Task,
     TaskBuilder, TaskStatus, ThemeMode,
+};
+pub use validation::{
+    format_phone_display, is_valid_email, is_valid_hex_color, is_valid_phone, is_valid_slug,
+    normalize_email, normalize_hex_color, normalize_phone, slugify, validate_email,
+    validate_headline, validate_hex_color, validate_max_length, validate_name, validate_non_empty,
+    validate_phone, validate_slug, validate_task_title, ValidationError, MAX_EMAIL_LENGTH,
+    MAX_HEADLINE_LENGTH, MAX_LOCAL_PART_LENGTH, MAX_NAME_LENGTH, MAX_PHONE_DIGITS,
+    MAX_PHONE_RAW_LENGTH, MAX_SLUG_LENGTH, MAX_TASK_TITLE_LENGTH, MIN_PHONE_DIGITS,
 };
 
 /// NewsJournal core crate version.

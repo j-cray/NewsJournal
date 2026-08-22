@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::error::ModelError;
+use crate::validation::{validate_headline, validate_hex_color, validate_slug, ValidationError};
 
 /// The editorial stages an article progresses through on the Kanban board.
 ///
@@ -236,6 +237,21 @@ impl Article {
         self.touch();
     }
 
+    /// Validates all field invariants of the article.
+    ///
+    /// Checks:
+    /// - Slug is non-empty, safe alphanumeric/dashes/underscores, and within length limits.
+    /// - Headline is non-empty and within length limits.
+    /// - Color code (if present) is a valid hex color.
+    pub fn validate(&self) -> Result<(), ValidationError> {
+        validate_slug(&self.slug)?;
+        validate_headline(&self.headline)?;
+        if let Some(ref color) = self.color {
+            validate_hex_color(color)?;
+        }
+        Ok(())
+    }
+
     /// Evaluates if the article is currently overdue given a reference timestamp.
     /// Articles in the `Published` stage are never considered overdue.
     #[must_use]
@@ -322,7 +338,7 @@ impl ArticleBuilder {
         self
     }
 
-    /// Builds the `Article` entity.
+    /// Builds the `Article` entity without validating invariants.
     #[must_use]
     pub fn build(self) -> Article {
         let now = Utc::now();
@@ -337,5 +353,12 @@ impl ArticleBuilder {
             created_at: self.created_at.unwrap_or(now),
             updated_at: self.updated_at.unwrap_or(now),
         }
+    }
+
+    /// Builds and validates the `Article` entity.
+    pub fn build_validated(self) -> Result<Article, ValidationError> {
+        let article = self.build();
+        article.validate()?;
+        Ok(article)
     }
 }

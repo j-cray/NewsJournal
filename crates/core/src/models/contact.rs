@@ -4,6 +4,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::validation::{validate_email, validate_name, validate_phone, ValidationError};
+
 /// Core domain entity representing a contact or source.
 ///
 /// # Examples
@@ -97,6 +99,23 @@ impl Contact {
     pub fn touch(&mut self) {
         self.updated_at = Utc::now();
     }
+
+    /// Validates all field invariants of the contact.
+    ///
+    /// Checks:
+    /// - Name is non-empty and within length limits.
+    /// - Email (if present) is a valid email format.
+    /// - Phone (if present) is a valid phone format.
+    pub fn validate(&self) -> Result<(), ValidationError> {
+        validate_name(&self.name)?;
+        if let Some(ref email) = self.email {
+            validate_email(email)?;
+        }
+        if let Some(ref phone) = self.phone {
+            validate_phone(phone)?;
+        }
+        Ok(())
+    }
 }
 
 /// Fluent builder for creating a `Contact`.
@@ -177,7 +196,7 @@ impl ContactBuilder {
         self
     }
 
-    /// Builds the `Contact` entity.
+    /// Builds the `Contact` entity without validating invariants.
     #[must_use]
     pub fn build(self) -> Contact {
         let now = Utc::now();
@@ -192,5 +211,12 @@ impl ContactBuilder {
             created_at: self.created_at.unwrap_or(now),
             updated_at: self.updated_at.unwrap_or(now),
         }
+    }
+
+    /// Builds and validates the `Contact` entity.
+    pub fn build_validated(self) -> Result<Contact, ValidationError> {
+        let contact = self.build();
+        contact.validate()?;
+        Ok(contact)
     }
 }

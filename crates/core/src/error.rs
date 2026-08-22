@@ -2,6 +2,8 @@
 
 use thiserror::Error;
 
+use crate::validation::ValidationError;
+
 /// Errors that can occur during domain model parsing and operations.
 #[derive(Debug, Error, PartialEq, Eq, Clone)]
 pub enum ModelError {
@@ -16,4 +18,8 @@ pub enum ModelError {
     /// Invalid theme mode string representation.
     #[error("unknown theme mode: {0}")]
     InvalidThemeMode(String),
+
+    /// Validation failure on entity fields or format constraints.
+    #[error("validation error: {0}")]
+    Validation(#[from] ValidationError),
 }

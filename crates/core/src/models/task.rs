@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::error::ModelError;
+use crate::validation::{validate_task_title, ValidationError};
 
 /// Workflow status of an article-linked task.
 ///
@@ -196,6 +197,15 @@ impl Task {
         self.touch();
     }
 
+    /// Validates all field invariants of the task.
+    ///
+    /// Checks:
+    /// - Title is non-empty and does not exceed maximum length.
+    pub fn validate(&self) -> Result<(), ValidationError> {
+        validate_task_title(&self.title)?;
+        Ok(())
+    }
+
     /// Evaluates if the task is currently overdue relative to a reference timestamp.
     /// Completed tasks are never considered overdue.
     #[must_use]
@@ -274,7 +284,7 @@ impl TaskBuilder {
         self
     }
 
-    /// Builds the `Task` entity.
+    /// Builds the `Task` entity without validating invariants.
     #[must_use]
     pub fn build(self) -> Task {
         let now = Utc::now();
@@ -288,5 +298,12 @@ impl TaskBuilder {
             created_at: self.created_at.unwrap_or(now),
             updated_at: self.updated_at.unwrap_or(now),
         }
+    }
+
+    /// Builds and validates the `Task` entity.
+    pub fn build_validated(self) -> Result<Task, ValidationError> {
+        let task = self.build();
+        task.validate()?;
+        Ok(task)
     }
 }
