@@ -31,7 +31,7 @@ Based on the architectural alignment and design interview:
 ## 2. Phased Implementation Roadmap
 
 ### Phase 1: Workspace & Core Domain Architecture (`newsjournal-core`)
-- [ ] **1.1 Workspace Setup**: Configure root `Cargo.toml` with `crates/core` and `crates/gui` workspace members.
+- [x] **1.1 Workspace Setup**: Configure root `Cargo.toml` with `crates/core` and `crates/gui` workspace members.
 - [ ] **1.2 Domain Models**:
   - `Article`: UUID, slug (required, unique), headline, description, stage (`Pitching`, `Researching`, `Writing`, `Editing`, `ReadyToPublish`, `Published`), deadline (datetime), color (hex/RGB), timestamps.
   - `Task`: UUID, article_id (foreign key), title, notes, due_date, status (`ToDo`, `InProgress`, `Complete`), timestamps.

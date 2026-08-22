@@ -14,7 +14,7 @@ This document serves as the living roadmap tracking project milestones, current 
 
 | Phase | Description | Status | Target Platforms |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | Workspace Setup & Core Domain Models (`newsjournal-core`) | ⏳ In Planning | All |
+| **Phase 1** | Workspace Setup & Core Domain Models (`newsjournal-core`) | 🔄 In Progress | All |
 | **Phase 2** | SQLite Persistence Engine & Migrations | ⏳ In Planning | All |
 | **Phase 3** | GUI Scaffolding & Cross-Platform Glass Architecture | ⏳ In Planning | Linux & macOS |
 | **Phase 4** | Vertical Left Navigation Bar & Settings / Theme Engine | ⏳ In Planning | Linux & macOS |
@@ -52,7 +52,7 @@ This document serves as the living roadmap tracking project milestones, current 
 ---
 
 ## 📋 Backlog & Upcoming Work
-- [ ] Initialize Cargo workspace with `newsjournal-core` and `newsjournal-gui`.
+- [x] Initialize Cargo workspace with `newsjournal-core` and `newsjournal-gui`.
 - [ ] Implement core entities (`Article`, `Task`, `Contact`, `Settings`) and validation.
 - [ ] Implement deterministic color palette generator avoiding unreadable colors (such as light yellow).
 - [ ] Implement SQLite schema migrations and CRUD repository with unit tests.
