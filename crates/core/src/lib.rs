@@ -10,8 +10,9 @@ pub mod storage;
 pub mod validation;
 
 pub use storage::{
-    configure_connection, open_in_memory, open_in_memory_unmigrated, run_migrations,
-    AppliedMigration, Migration, MigrationReport, MigrationRunner, StorageError, MIGRATIONS,
+    configure_connection, open_file, open_in_memory, open_in_memory_unmigrated, run_migrations,
+    AppliedMigration, Migration, MigrationReport, MigrationRunner, StorageError, StorageService,
+    MIGRATIONS,
 };
 
 pub use color::{
