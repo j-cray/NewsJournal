@@ -6,7 +6,13 @@ pub mod color;
 pub mod deadline;
 pub mod error;
 pub mod models;
+pub mod storage;
 pub mod validation;
+
+pub use storage::{
+    configure_connection, open_in_memory, open_in_memory_unmigrated, run_migrations,
+    AppliedMigration, Migration, MigrationReport, MigrationRunner, StorageError, MIGRATIONS,
+};
 
 pub use color::{
     assign_color, assign_color_for_slug, assign_color_for_uuid, fnv1a_hash, fnv1a_hash_str,
@@ -79,5 +85,8 @@ mod tests {
             config.due_soon_threshold,
             chrono::Duration::hours(DEFAULT_DUE_SOON_HOURS)
         );
+
+        let in_memory = open_in_memory();
+        assert!(in_memory.is_ok());
     }
 }
