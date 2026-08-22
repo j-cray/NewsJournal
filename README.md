@@ -16,10 +16,19 @@ A pure Rust desktop application for journalists to organize story workflows, man
 
 - 🦀 **Reproducible Dev Environment**: Nix Flake (`flake.nix`) providing the latest nightly Rust toolchain, `rust-analyzer`, `clippy`, `rustfmt`, and `cargo-nextest`.
 - ⚡ **Seamless Tooling**: `direnv` integration (`.envrc`) to auto-load the development environment.
-- 🧪 **Test-First & Modular Philosophy**: Detailed guidelines in [GEMINI.md](file:///home/icarus/dev/templates/rust-project-template/GEMINI.md) (and symlinked [AGENTS.md](file:///home/icarus/dev/templates/rust-project-template/AGENTS.md) / [CLAUDE.md](file:///home/icarus/dev/templates/rust-project-template/CLAUDE.md)) enforcing modularity, small files, and strict verification loops.
+- 🧪 **Test-First & Modular Philosophy**: Detailed guidelines in [GEMINI.md](GEMINI.md) (and symlinked [AGENTS.md](AGENTS.md) / [CLAUDE.md](CLAUDE.md)) enforcing modularity, small files, and strict verification loops.
 - 🤖 **Automated & Summonable AI PR Reviews**: GitHub Actions workflow (`.github/workflows/ai-review.yml`) for automated and on-demand PR reviews using Google Gemini, Anthropic Claude, and GitHub Copilot.
 - 🔄 **Continuous Integration**: GitHub Actions CI (`.github/workflows/ci.yml`) running formatting, Clippy lints, and nextest test suites.
 - 📦 **Automated Dependency Updates**: Dependabot (`.github/dependabot.yml`) configured for weekly grouped updates of Cargo dependencies and GitHub Actions.
+
+---
+
+## Workspace Structure
+
+The project is structured as a Cargo workspace:
+
+- **`crates/core` (`newsjournal-core`)**: Pure Rust domain logic, entity models, validation engine, color palette generation, overdue calculations, and SQLite persistence.
+- **`crates/gui` (`newsjournal-gui`)**: Cross-platform desktop application interface (`newsjournal` binary).
 
 ---
 
@@ -40,18 +49,14 @@ Or manually start the Nix shell:
 nix develop
 ```
 
-### 2. Initializing Your Crate
-
-This template is kept clean without a pre-baked crate structure. Initialize your project according to your needs:
+### 2. Building and Running
 
 ```bash
-# For a binary / CLI app
-cargo init --bin
+# Build all workspace crates
+cargo build --all-targets --all-features
 
-# For a library
-cargo init --lib
-
-# Or create a Cargo workspace with a root Cargo.toml
+# Run the desktop application
+cargo run -p newsjournal-gui
 ```
 
 ---

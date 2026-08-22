@@ -1,0 +1,17 @@
+[package]
+name = "newsjournal-gui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Cross-platform desktop application for NewsJournal"
+
+[[bin]]
+name = "newsjournal"
+path = "src/main.rs"
+
+[dependencies]
+newsjournal-core = { path = "../core" }
+
+[dev-dependencies]
