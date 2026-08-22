@@ -384,4 +384,49 @@ mod tests {
         let decoded: Settings = serde_json::from_str(&json).expect("settings parse failed");
         assert_eq!(settings, decoded);
     }
+
+    #[test]
+    fn test_entity_validation() {
+        let valid_article = Article::builder("election-2026", "2026 Mayoral Race")
+            .color("#3498DB")
+            .build_validated();
+        assert!(valid_article.is_ok());
+
+        let invalid_slug_article = Article::builder("Election 2026", "Headline").build_validated();
+        assert!(invalid_slug_article.is_err());
+
+        let invalid_color_article = Article::builder("election-2026", "Headline")
+            .color("invalid-color")
+            .build_validated();
+        assert!(invalid_color_article.is_err());
+
+        let valid_task =
+            Task::builder(Uuid::new_v4(), "Interview city treasurer").build_validated();
+        assert!(valid_task.is_ok());
+
+        let invalid_task = Task::builder(Uuid::new_v4(), "   ").build_validated();
+        assert!(invalid_task.is_err());
+
+        let valid_contact = Contact::builder("Jane Doe")
+            .email("jane@news.example.org")
+            .phone("+1 555-0199")
+            .build_validated();
+        assert!(valid_contact.is_ok());
+
+        let invalid_contact_email = Contact::builder("Jane Doe")
+            .email("not-an-email")
+            .build_validated();
+        assert!(invalid_contact_email.is_err());
+
+        let invalid_contact_phone = Contact::builder("Jane Doe")
+            .phone("abc-123")
+            .build_validated();
+        assert!(invalid_contact_phone.is_err());
+
+        let invalid_contact_name = Contact::builder("").build_validated();
+        assert!(invalid_contact_name.is_err());
+
+        let settings = Settings::default();
+        assert!(settings.validate().is_ok());
+    }
 }
