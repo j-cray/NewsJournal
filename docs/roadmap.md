@@ -58,8 +58,8 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement deterministic color palette generator avoiding unreadable colors (such as light yellow).
 - [x] Implement real-time deadline evaluation, overdue tracking engine, and batch urgency summary engine.
 - [x] Implement comprehensive generative property-based tests (`proptest`) and state machine test suites.
-- [x] Implement embedded SQLite schema migration runner, version tracking, and table definitions.
-- [ ] Implement `StorageService` CRUD repository layer with transactional integrity.
+- [x] Implement `StorageService` CRUD repository layer with transactional integrity.
+- [ ] Setup app directory resolution (`directories` crate) and storage integration tests.
 - [ ] Setup `libcosmic` Linux and `iced` macOS window targets.
 
 

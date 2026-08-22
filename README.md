@@ -64,16 +64,27 @@ cargo run -p newsjournal-gui
 
 ```rust
 use newsjournal_core::color::{assign_color_for_slug, Color};
-use newsjournal_core::{Article, ArticleStage};
+use newsjournal_core::storage::StorageService;
+use newsjournal_core::{Article, ArticleStage, Contact, Task, TaskStatus};
 
-// Create an article with automatic deterministic color assignment
+// Initialize SQLite storage service in-memory (or open from disk)
+let service = StorageService::in_memory()?;
+
+// Create and persist an article
 let article = Article::new("city-budget-2026", "City Council Votes on Historic Transit Expansion")
     .with_stage(ArticleStage::Writing)
     .with_auto_color();
+let created = service.create_article(article)?;
 
-// Resolve color or default deterministically
-let color: Color = article.color_or_default();
-println!("Assigned Hex Color: {}", color.to_hex());
+// Create an article-linked task
+let task = Task::new(created.id, "Interview Transit Union President")
+    .with_status(TaskStatus::InProgress);
+service.create_task(task)?;
+
+// Tag a contact to the story
+let contact = Contact::new("Jane Doe").with_role("Spokesperson");
+let created_contact = service.create_contact(contact)?;
+service.link_contact_to_article(created.id, created_contact.id)?;
 ```
 
 ---

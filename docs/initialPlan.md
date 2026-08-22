@@ -46,7 +46,7 @@ Based on the architectural alignment and design interview:
 
 ### Phase 2: Persistence Engine & Database Migrations (SQLite)
 - [x] **2.1 Migration Runner**: Embedded SQL migration scripts creating tables (`articles`, `tasks`, `contacts`, `article_contacts`, `settings`) and indexes.
-- [ ] **2.2 Repository Layer (`StorageService`)**:
+- [x] **2.2 Repository Layer (`StorageService`)**:
   - CRUD operations for Articles with transactional slug uniqueness guarantees.
   - CRUD operations for Tasks with parent article cascading/integrity checks.
   - CRUD operations for Contacts and tagging relationships (`link_contact_to_article`, `unlink_contact_from_article`, `list_article_contacts`).
