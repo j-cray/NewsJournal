@@ -1,6 +1,14 @@
-# Rust Project Template
+# NewsJournal
 
-A template repository for Rust projects, designed for modular architecture, test-driven development, reproducible developer environments via **Nix** and **direnv**, automated CI with `cargo-nextest`, and multi-agent AI PR reviews (**Google Gemini**, **Claude**, and **GitHub Copilot**).
+A pure Rust desktop application for journalists to organize story workflows, manage investigative beats, coordinate article tasks, track sources/contacts, and monitor publishing deadlines. Built with **COSMIC Frosted Glass** on Linux (`libcosmic`) and **Liquid Glass** on macOS (`iced` + native vibrancy).
+
+---
+
+## Documentation & Planning
+
+- [Initial Implementation Plan](docs/initialPlan.md): Detailed 10-phase roadmap, architectural specifications, and data schemas.
+- [Project Roadmap](docs/roadmap.md): Living milestones, Architectural Decision Records (ADRs), and backlog items.
+- [Agent & Engineering Guidelines](GEMINI.md): Test-driven development rules and verification loop requirements.
 
 ---
 
