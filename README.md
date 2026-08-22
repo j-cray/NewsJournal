@@ -60,7 +60,24 @@ cargo build --all-targets --all-features
 cargo run -p newsjournal-gui
 ```
 
+### 3. Core Crate Example Usage
+
+```rust
+use newsjournal_core::color::{assign_color_for_slug, Color};
+use newsjournal_core::{Article, ArticleStage};
+
+// Create an article with automatic deterministic color assignment
+let article = Article::new("city-budget-2026", "City Council Votes on Historic Transit Expansion")
+    .with_stage(ArticleStage::Writing)
+    .with_auto_color();
+
+// Resolve color or default deterministically
+let color: Color = article.color_or_default();
+println!("Assigned Hex Color: {}", color.to_hex());
+```
+
 ---
+
 
 ## Development & Verification Loop
 

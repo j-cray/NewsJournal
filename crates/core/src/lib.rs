@@ -2,10 +2,15 @@
 //!
 //! Pure Rust domain logic, data models, validation, and persistence for the NewsJournal application.
 
+pub mod color;
 pub mod error;
 pub mod models;
 pub mod validation;
 
+pub use color::{
+    assign_color, assign_color_for_slug, assign_color_for_uuid, fnv1a_hash, fnv1a_hash_str,
+    fnv1a_hash_uuid, Color, ColorError, NamedColor, Palette, CURATED_PALETTE,
+};
 pub use error::ModelError;
 pub use models::{
     Article, ArticleBuilder, ArticleContact, ArticleStage, Contact, ContactBuilder, Settings, Task,

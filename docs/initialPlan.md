@@ -39,8 +39,9 @@ Based on the architectural alignment and design interview:
   - `ArticleContact`: Many-to-many join relationship between articles and contacts.
   - `Settings`: Theme mode (`System`, `Light`, `Dark`).
 - [x] **1.3 Validation Engine**: Strict slug validation (URL/filesystem-safe alphanumeric with dashes/underscores), email/phone formatting, non-empty names.
-- [ ] **1.4 Color Palette Generator**: Hash-based deterministic assignment selecting from a high-contrast, accessible color palette (excluding low-contrast/light yellow shades) with RGB/Hex conversions.
+- [x] **1.4 Color Palette Generator**: Hash-based deterministic assignment selecting from a high-contrast, accessible color palette (excluding low-contrast/light yellow shades) with RGB/Hex conversions.
 - [ ] **1.5 Overdue Engine**: Logic to evaluate deadline expiration against current timestamp, automatically excluding articles in `Published` stage.
+
 - [ ] **1.6 Core Unit & Property Tests**: TDD test suite covering validation, color generation, status transitions, and overdue calculations.
 
 ### Phase 2: Persistence Engine & Database Migrations (SQLite)

@@ -15,6 +15,7 @@ pub use task::{Task, TaskBuilder, TaskStatus};
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::color::{assign_color_for_slug, Color};
     use chrono::{Duration, Utc};
     use uuid::Uuid;
 
@@ -188,6 +189,27 @@ mod tests {
         assert_eq!(custom_article.stage, ArticleStage::Writing);
         assert_eq!(custom_article.deadline, Some(deadline));
         assert_eq!(custom_article.color.as_deref(), Some("#2ECC71"));
+        assert_eq!(
+            custom_article.color_or_default(),
+            Color::from_hex("#2ECC71").unwrap()
+        );
+
+        // Auto color assignment from slug
+        let auto_article = Article::new("city-council-investigation", "Headline").with_auto_color();
+        assert!(auto_article.color.is_some());
+        assert_eq!(
+            auto_article.color_or_default(),
+            assign_color_for_slug("city-council-investigation")
+        );
+
+        let mut mutating_article = Article::new("another-story", "Headline");
+        assert!(mutating_article.color.is_none());
+        assert_eq!(
+            mutating_article.color_or_default(),
+            assign_color_for_slug("another-story")
+        );
+        mutating_article.assign_default_color();
+        assert!(mutating_article.color.is_some());
     }
 
     #[test]
