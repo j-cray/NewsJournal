@@ -17,9 +17,9 @@ use crate::theme::detector::{SystemThemeDetector, SystemThemeWatcher};
 use crate::theme::ResolvedTheme;
 use crate::views::{
     build_articles_kanban_view, build_contacts_view, build_modal_view, build_nav_view_models,
-    build_settings_view, build_tasks_kanban_view, build_toast_view, ArticleColumnViewModel,
-    ContactListItemViewModel, ModalViewModel, NavItemViewModel, SettingsViewModel,
-    TaskColumnViewModel, ToastContainerViewModel,
+    build_settings_view_with_platform, build_tasks_kanban_view, build_toast_view,
+    ArticleColumnViewModel, ContactListItemViewModel, ModalViewModel, NavItemViewModel,
+    SettingsViewModel, TaskColumnViewModel, ToastContainerViewModel,
 };
 
 /// High-level presentation descriptor representing the complete macOS Liquid Glass view tree.
@@ -231,7 +231,10 @@ impl MacosApp {
         };
 
         let settings_view = if state.active_tab == NavTab::Settings {
-            Some(build_settings_view(state))
+            Some(build_settings_view_with_platform(
+                state,
+                "macOS (Liquid Glass)",
+            ))
         } else {
             None
         };

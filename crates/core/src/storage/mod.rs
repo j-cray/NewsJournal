@@ -23,7 +23,7 @@ pub use paths::{
     AppPaths, APPLICATION, DEFAULT_DB_FILENAME, ENV_CACHE_DIR, ENV_CONFIG_DIR, ENV_DATA_DIR,
     ENV_DB_PATH, ENV_STATE_DIR, ORGANIZATION, QUALIFIER,
 };
-pub use service::StorageService;
+pub use service::{DatabaseEntityCounts, StorageService};
 
 #[cfg(test)]
 mod tests {

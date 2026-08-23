@@ -127,6 +127,8 @@ pub enum AppMessage {
     SetHighContrast(bool),
     /// Updates custom brand accent color override (RGB).
     SetCustomAccent(Option<(u8, u8, u8)>),
+    /// Resets all application settings to defaults and persists.
+    ResetSettingsToDefaults,
 
     // ==========================================
     // Drag & Drop Interactions
