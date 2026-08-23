@@ -97,7 +97,7 @@ Based on the architectural alignment and design interview:
 - [x] **5.4 Empty State & Creation Triggers**: Column headers with card counts and "New Article" quick action button in toolbar.
 
 ### Phase 6: In-App Modal / Slide-over Drawer for Article Editing
-- [ ] **6.1 Glass Modal/Drawer Container**: Centered or slide-over layered glass modal with background dimming and blur.
+- [x] **6.1 Glass Modal/Drawer Container**: Centered or slide-over layered glass modal with background dimming and blur.
 - [ ] **6.2 Article Form Fields**:
   - Required unique Slug input with live collision check.
   - Headline input and multi-line Description / Notes text area.

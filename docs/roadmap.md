@@ -19,7 +19,7 @@ This document serves as the living roadmap tracking project milestones, current 
 | **Phase 3** | GUI Scaffolding & Cross-Platform Glass Architecture | ✅ Complete | Linux & macOS |
 | **Phase 4** | Vertical Left Navigation Bar & Settings / Theme Engine | ✅ Complete | Linux & macOS |
 | **Phase 5** | Articles Kanban Board (6 Production Stages) & Drag-and-Drop | ✅ Complete | Linux & macOS |
-| **Phase 6** | Article Creation & Edit Glass Modal / Drawer | ⏳ In Planning | Linux & macOS |
+| **Phase 6** | Article Creation & Edit Glass Modal / Drawer | 🔄 In Progress | Linux & macOS |
 | **Phase 7** | Tasks Kanban Board & Article-Task Synchronization | ⏳ In Planning | Linux & macOS |
 | **Phase 8** | Contacts Directory & Article Tagging System | ⏳ In Planning | Linux & macOS |
 | **Phase 9** | Real-Time Deadline Tracking & Overdue Alert Engine | ⏳ In Planning | Linux & macOS |
@@ -75,6 +75,10 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Article Card Component with color accents, task counter, contact pills, and overdue badges (Task 5.2).
 - [x] Implement Drag-and-Drop Movement Engine with stage transitions and visual drop targets (Task 5.3).
 - [x] Implement Column empty states, card count badges, deck toolbar, and creation triggers (Task 5.4).
-- [ ] Implement Phase 6 In-App Glass Modal / Slide-over Drawer for Article Editing.
+- [x] Implement Glass Modal / Drawer Container with centered & slide-over layouts and backdrop blur (Task 6.1).
+- [ ] Implement Article Form Fields with slug collisions, stage dropdown, and deadline picker (Task 6.2).
+- [ ] Implement Contact Tagging Sub-Section in article drawer (Task 6.3).
+- [ ] Implement Inline Task Management Sub-Section in article drawer (Task 6.4).
+- [ ] Implement Save & Cancel actions with keyboard shortcuts and validation tooltips (Task 6.5).
 
 
