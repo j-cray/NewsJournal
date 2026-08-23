@@ -79,7 +79,7 @@ Based on the architectural alignment and design interview:
   - Persistence of user settings to SQLite database upon selection.
 
 ### Phase 5: Articles Kanban Board & Drag-and-Drop Interaction
-- [ ] **5.1 Kanban Deck Layout**: Horizontal scrollable container hosting 6 production stage columns:
+- [x] **5.1 Kanban Deck Layout**: Horizontal scrollable container hosting 6 production stage columns:
   1. Pitching
   2. Researching
   3. Writing

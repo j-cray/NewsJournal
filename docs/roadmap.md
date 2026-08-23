@@ -71,6 +71,9 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement theme engine integration with dynamic System/Light/Dark switching (Task 3.4).
 - [x] Implement Left Navigation Bar component, active tab highlighting, badge metrics, and keyboard shortcuts (Task 4.1).
 - [x] Implement Settings Page with theme mode selection, database info, and persistence (Task 4.2).
-- [ ] Implement Articles Kanban Board deck layout with 6 production stage columns (Task 5.1).
+- [x] Implement Articles Kanban Board deck layout with 6 production stage columns and horizontal scrolling (Task 5.1).
+- [ ] Implement Article Card Component with color accents, task counter, contact pills, and overdue badges (Task 5.2).
+- [ ] Implement Drag-and-Drop Movement Engine with stage transitions and visual drop targets (Task 5.3).
+- [ ] Implement Column empty states and toolbar creation triggers (Task 5.4).
 
 
