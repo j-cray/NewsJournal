@@ -20,7 +20,7 @@ This document serves as the living roadmap tracking project milestones, current 
 | **Phase 4** | Vertical Left Navigation Bar & Settings / Theme Engine | ✅ Complete | Linux & macOS |
 | **Phase 5** | Articles Kanban Board (6 Production Stages) & Drag-and-Drop | ✅ Complete | Linux & macOS |
 | **Phase 6** | Article Creation & Edit Glass Modal / Drawer | ✅ Complete | Linux & macOS |
-| **Phase 7** | Tasks Kanban Board & Article-Task Synchronization | 🔄 In Progress | Linux & macOS |
+| **Phase 7** | Tasks Kanban Board & Article-Task Synchronization | ✅ Complete | Linux & macOS |
 | **Phase 8** | Contacts Directory & Article Tagging System | ⏳ In Planning | Linux & macOS |
 | **Phase 9** | Real-Time Deadline Tracking & Overdue Alert Engine | ⏳ In Planning | Linux & macOS |
 | **Phase 10** | Platform Packaging, Cross-Compilation & Verification | ⏳ In Planning | Linux (COSMIC) & macOS |
@@ -83,5 +83,6 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Tasks Kanban Deck Layout (3-column workflow board: To-Do, In Progress, Complete) (Task 7.1).
 - [x] Implement Task Card Component with accent strips, slug badges, due dates, notes previews, and overdue cues (Task 7.2).
 - [x] Implement Task Drag-and-Drop Movement Engine across To-Do, In Progress, and Complete columns (Task 7.3).
+- [x] Implement Task Creation & Editing Drawer with live parent article synchronization (Task 7.4).
 
 
