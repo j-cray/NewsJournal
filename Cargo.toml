@@ -22,3 +22,4 @@ thiserror = "2.0"
 rusqlite = { version = "0.32", features = ["bundled", "chrono", "uuid"] }
 directories = "5.0"
 proptest = "1.5"
+iced = { version = "0.14", default-features = false, features = ["wgpu", "tiny-skia", "tokio", "wayland", "x11", "crisp"] }

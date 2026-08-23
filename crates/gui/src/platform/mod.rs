@@ -7,3 +7,6 @@
 
 pub mod cosmic;
 pub mod macos;
+pub mod runner;
+
+pub use runner::{run_app, NewsJournalApp};

@@ -20,6 +20,7 @@ pub use navigation::{
 };
 pub use platform::cosmic;
 pub use platform::macos;
+pub use platform::runner::{run_app, NewsJournalApp};
 pub use runtime::EventLoop;
 pub use state::AppState;
 pub use state::{
