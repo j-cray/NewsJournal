@@ -2,14 +2,14 @@
 
 use chrono::{DateTime, Datelike, Duration, TimeZone, Timelike, Utc, Weekday};
 use newsjournal_core::color::{assign_color_for_slug, Color, CURATED_PALETTE};
-use newsjournal_core::models::ArticleStage;
-use newsjournal_core::validation::MAX_SLUG_LENGTH;
+use newsjournal_core::models::{ArticleStage, Contact};
+use newsjournal_core::validation::{slugify, MAX_SLUG_LENGTH};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::state::modal::ArticleDraft;
 use crate::state::AppState;
-use crate::views::article_card::calculate_contrast_color;
+use crate::views::article_card::{calculate_contrast_color, format_contact_initials};
 
 /// Maximum length for an article headline.
 pub const MAX_HEADLINE_LENGTH: usize = 250;
@@ -288,6 +288,128 @@ pub struct ArticleColorPickerViewModel {
     pub custom_hex_error: Option<String>,
 }
 
+/// Presentation model for a single contact pill / chip in the Article Form.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ContactPillViewModel {
+    /// Unique contact ID.
+    pub id: Uuid,
+    /// Full contact name (e.g. "Jane Doe").
+    pub name: String,
+    /// Organization or publication (e.g. "Daily News").
+    pub organization: Option<String>,
+    /// Professional role or beat (e.g. "City Hall Reporter").
+    pub role: Option<String>,
+    /// Formatted single-line label combining name and org/role (e.g. "Jane Doe (Daily News)").
+    pub display_label: String,
+    /// Short 1-2 letter uppercase initials for avatar badge (e.g. "JD").
+    pub initials: String,
+    /// Deterministic hex color for avatar badge background.
+    pub avatar_color_hex: String,
+    /// High-contrast text color on avatar badge (`#FFFFFF` or `#0F172A`).
+    pub avatar_text_color: &'static str,
+    /// Whether this contact is currently tagged in the article draft.
+    pub is_tagged: bool,
+    /// Email address if present.
+    pub email: Option<String>,
+    /// Phone number if present.
+    pub phone: Option<String>,
+}
+
+impl ContactPillViewModel {
+    /// Constructs a contact pill view model from a [`Contact`] and tagged status.
+    #[must_use]
+    pub fn new(contact: &Contact, is_tagged: bool) -> Self {
+        let initials = format_contact_initials(&contact.name);
+        let slug_key = slugify(&contact.name);
+        let avatar_color = assign_color_for_slug(if slug_key.is_empty() {
+            "contact"
+        } else {
+            &slug_key
+        });
+        let avatar_color_hex = avatar_color.to_hex();
+        let avatar_text_color = calculate_contrast_color(&avatar_color_hex);
+
+        let display_label = match (&contact.organization, &contact.role) {
+            (Some(org), Some(role)) if !org.is_empty() && !role.is_empty() => {
+                format!("{} ({} • {})", contact.name, org, role)
+            }
+            (Some(org), _) if !org.is_empty() => format!("{} ({})", contact.name, org),
+            (_, Some(role)) if !role.is_empty() => format!("{} ({})", contact.name, role),
+            _ => contact.name.clone(),
+        };
+
+        Self {
+            id: contact.id,
+            name: contact.name.clone(),
+            organization: contact.organization.clone(),
+            role: contact.role.clone(),
+            display_label,
+            initials,
+            avatar_color_hex,
+            avatar_text_color,
+            is_tagged,
+            email: contact.email.clone(),
+            phone: contact.phone.clone(),
+        }
+    }
+}
+
+/// Presentation view model for the inline "Create Contact" sub-form within the article form.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct InlineContactFormViewModel {
+    /// Contact full name input value.
+    pub name_value: String,
+    /// Contact organization / outlet input value.
+    pub organization_value: String,
+    /// Contact role / beat input value.
+    pub role_value: String,
+    /// Contact phone number input value.
+    pub phone_value: String,
+    /// Contact email address input value.
+    pub email_value: String,
+    /// Story / contact notes input value.
+    pub notes_value: String,
+    /// Name field validation error (if any).
+    pub name_error: Option<String>,
+    /// Email field validation error (if any).
+    pub email_error: Option<String>,
+    /// Phone field validation error (if any).
+    pub phone_error: Option<String>,
+    /// Whether the inline form is currently valid and ready to create.
+    pub is_valid: bool,
+}
+
+/// Presentation view model for the Contact Tagging sub-section in the Article Form.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ContactTaggingSectionViewModel {
+    /// Current search filter query entered by user.
+    pub search_query: String,
+    /// Whether a non-empty search query is active.
+    pub is_search_active: bool,
+    /// All contacts currently tagged in this article draft.
+    pub tagged_contacts: Vec<ContactPillViewModel>,
+    /// Contacts matching search query that are available to be tagged (not already tagged).
+    pub available_contacts: Vec<ContactPillViewModel>,
+    /// All contacts matching search query (with `is_tagged` set accordingly).
+    pub filtered_contacts: Vec<ContactPillViewModel>,
+    /// Total count of tagged contacts in this draft.
+    pub total_tagged_count: usize,
+    /// Total count of all contacts available in the system.
+    pub total_system_contacts: usize,
+    /// Count of contacts matching active search filter.
+    pub matched_contacts_count: usize,
+    /// Whether any contacts match the current search query.
+    pub has_matches: bool,
+    /// Whether the inline contact creation sub-form is currently expanded / open.
+    pub is_inline_contact_open: bool,
+    /// Inline contact creation sub-form model (if open).
+    pub inline_form: Option<InlineContactFormViewModel>,
+    /// Search input placeholder hint text.
+    pub search_placeholder: &'static str,
+    /// Empty state message when no contacts exist or match.
+    pub empty_state_message: Option<String>,
+}
+
 /// Comprehensive presentation model for all Article Form fields in the modal/drawer.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ArticleFormViewModel {
@@ -307,6 +429,8 @@ pub struct ArticleFormViewModel {
     pub deadline_field: ArticleDeadlineFieldViewModel,
     /// Color picker swatch grid presentation model.
     pub color_picker: ArticleColorPickerViewModel,
+    /// Contact tagging sub-section presentation model.
+    pub contacts_section: ContactTaggingSectionViewModel,
     /// Number of contacts tagged in this draft.
     pub tagged_contacts_count: usize,
     /// Whether the form is currently submittable (valid format, unique slug, non-empty required fields).
@@ -598,7 +722,109 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         custom_hex_error,
     };
 
-    // 7. Overall error calculation and submission status
+    // 7. Build Contact Tagging sub-section view model
+    let clean_query = draft.contact_search_query.trim().to_lowercase();
+    let is_search_active = !clean_query.is_empty();
+
+    let mut tagged_contacts = Vec::new();
+    let mut available_contacts = Vec::new();
+    let mut filtered_contacts = Vec::new();
+
+    for contact in &state.contacts {
+        let is_tagged = draft.is_contact_tagged(contact.id);
+        let pill = ContactPillViewModel::new(contact, is_tagged);
+
+        if is_tagged {
+            tagged_contacts.push(pill.clone());
+        }
+
+        let matches_search = if is_search_active {
+            contact.name.to_lowercase().contains(&clean_query)
+                || contact
+                    .organization
+                    .as_ref()
+                    .map(|s| s.to_lowercase().contains(&clean_query))
+                    .unwrap_or(false)
+                || contact
+                    .role
+                    .as_ref()
+                    .map(|s| s.to_lowercase().contains(&clean_query))
+                    .unwrap_or(false)
+                || contact
+                    .email
+                    .as_ref()
+                    .map(|s| s.to_lowercase().contains(&clean_query))
+                    .unwrap_or(false)
+        } else {
+            true
+        };
+
+        if matches_search {
+            filtered_contacts.push(pill.clone());
+            if !is_tagged {
+                available_contacts.push(pill);
+            }
+        }
+    }
+
+    let inline_form = draft.inline_contact.as_ref().map(|ic| {
+        let name_error = ic.validation_errors.get("name").cloned();
+        let email_error = ic.validation_errors.get("email").cloned();
+        let phone_error = ic.validation_errors.get("phone").cloned();
+        let is_valid = !ic.name.trim().is_empty()
+            && name_error.is_none()
+            && email_error.is_none()
+            && phone_error.is_none();
+
+        InlineContactFormViewModel {
+            name_value: ic.name.clone(),
+            organization_value: ic.organization.clone(),
+            role_value: ic.role.clone(),
+            phone_value: ic.phone.clone(),
+            email_value: ic.email.clone(),
+            notes_value: ic.notes.clone(),
+            name_error,
+            email_error,
+            phone_error,
+            is_valid,
+        }
+    });
+
+    let total_system_contacts = state.contacts.len();
+    let total_tagged_count = draft.tagged_contact_ids.len();
+    let matched_contacts_count = filtered_contacts.len();
+    let has_matches = matched_contacts_count > 0;
+
+    let empty_state_message = if total_system_contacts == 0 {
+        Some(
+            "No contacts in directory yet. Use '+ Create Contact' to add sources for this story."
+                .to_string(),
+        )
+    } else if is_search_active && !has_matches {
+        Some(format!(
+            "No contacts match '{clean_query}'. Click '+ Create Contact' to add them."
+        ))
+    } else {
+        None
+    };
+
+    let contacts_section = ContactTaggingSectionViewModel {
+        search_query: draft.contact_search_query.clone(),
+        is_search_active,
+        tagged_contacts,
+        available_contacts,
+        filtered_contacts,
+        total_tagged_count,
+        total_system_contacts,
+        matched_contacts_count,
+        has_matches,
+        is_inline_contact_open: draft.is_inline_contact_open(),
+        inline_form,
+        search_placeholder: "Search contacts by name, outlet, or role...",
+        empty_state_message,
+    };
+
+    // 8. Overall error calculation and submission status
     let mut total_errors = draft.validation_errors.len();
     if is_collision && !draft.validation_errors.contains_key("slug") {
         total_errors += 1;
@@ -624,6 +850,7 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         stage_field,
         deadline_field,
         color_picker,
+        contacts_section,
         tagged_contacts_count: draft.tagged_contact_ids.len(),
         is_submittable,
         total_error_count: total_errors,

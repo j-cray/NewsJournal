@@ -204,6 +204,99 @@ impl AppState {
                 }
                 Vec::new()
             }
+            AppMessage::ToggleArticleDraftContact(contact_id) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.toggle_contact(contact_id);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::AddArticleDraftContact(contact_id) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.tag_contact(contact_id);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::RemoveArticleDraftContact(contact_id) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.untag_contact(contact_id);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::SetArticleDraftContactSearch(query) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.set_contact_search(&query);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::OpenArticleDraftInlineContact => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.open_inline_contact();
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::CloseArticleDraftInlineContact => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.close_inline_contact();
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::UpdateArticleDraftInlineContact(contact_draft) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.inline_contact = Some(Box::new(contact_draft));
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::SaveArticleDraftInlineContact => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    if let Some(mut contact_draft) = draft.inline_contact.as_deref().cloned() {
+                        if contact_draft.validate() {
+                            match contact_draft.to_contact() {
+                                Ok(contact) => {
+                                    let contact_id = contact.id;
+                                    let contact_name = contact.name.clone();
+                                    draft.tag_contact(contact_id);
+                                    draft.close_inline_contact();
+                                    draft.clear_contact_search();
+                                    self.modal = ModalState::ArticleForm(draft);
+
+                                    // Add to in-memory state so it's immediately available to views
+                                    if !self.contacts.iter().any(|c| c.id == contact_id) {
+                                        self.contacts.push(contact.clone());
+                                    }
+
+                                    vec![
+                                        AppCommand::SaveContact(contact),
+                                        AppCommand::EmitToast(ToastMessage::success(
+                                            "Contact Created",
+                                            format!("Added and tagged '{contact_name}'"),
+                                        )),
+                                    ]
+                                }
+                                Err(err) => {
+                                    draft.inline_contact = Some(Box::new(contact_draft));
+                                    self.modal = ModalState::ArticleForm(draft);
+                                    vec![AppCommand::EmitError(err)]
+                                }
+                            }
+                        } else {
+                            draft.inline_contact = Some(Box::new(contact_draft));
+                            self.modal = ModalState::ArticleForm(draft);
+                            Vec::new()
+                        }
+                    } else {
+                        Vec::new()
+                    }
+                } else {
+                    Vec::new()
+                }
+            }
             AppMessage::UpdateTaskDraft(draft) => {
                 self.modal = ModalState::TaskForm(draft);
                 Vec::new()

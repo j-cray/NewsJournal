@@ -37,6 +37,10 @@ pub struct ArticleDraft {
     pub is_custom_color: bool,
     /// IDs of contacts linked to this article.
     pub tagged_contact_ids: Vec<Uuid>,
+    /// Active contact search query for filtering the contact picker.
+    pub contact_search_query: String,
+    /// In-progress draft for inline contact creation, if open.
+    pub inline_contact: Option<Box<ContactDraft>>,
     /// Validation error messages keyed by field name.
     pub validation_errors: HashMap<String, String>,
 }
@@ -79,6 +83,8 @@ impl ArticleDraft {
             color_hex,
             is_custom_color,
             tagged_contact_ids,
+            contact_search_query: String::new(),
+            inline_contact: None,
             validation_errors: HashMap::new(),
         }
     }
@@ -171,6 +177,113 @@ impl ArticleDraft {
             clean
         };
         self.color_hex = assign_color_for_slug(key).to_hex();
+    }
+
+    /// Tags a contact if not already tagged.
+    pub fn tag_contact(&mut self, contact_id: Uuid) {
+        if !self.tagged_contact_ids.contains(&contact_id) {
+            self.tagged_contact_ids.push(contact_id);
+        }
+    }
+
+    /// Removes a tagged contact by ID.
+    pub fn untag_contact(&mut self, contact_id: Uuid) {
+        self.tagged_contact_ids.retain(|id| *id != contact_id);
+    }
+
+    /// Toggles a contact's tagged state.
+    pub fn toggle_contact(&mut self, contact_id: Uuid) {
+        if self.tagged_contact_ids.contains(&contact_id) {
+            self.untag_contact(contact_id);
+        } else {
+            self.tag_contact(contact_id);
+        }
+    }
+
+    /// Returns `true` if the given contact is currently tagged.
+    #[must_use]
+    pub fn is_contact_tagged(&self, contact_id: Uuid) -> bool {
+        self.tagged_contact_ids.contains(&contact_id)
+    }
+
+    /// Sets the search filter for the contact picker.
+    pub fn set_contact_search(&mut self, query: &str) {
+        self.contact_search_query = query.to_string();
+    }
+
+    /// Clears the contact picker search filter.
+    pub fn clear_contact_search(&mut self) {
+        self.contact_search_query.clear();
+    }
+
+    /// Opens the inline contact creation sub-form with a fresh blank draft.
+    pub fn open_inline_contact(&mut self) {
+        self.inline_contact = Some(Box::new(ContactDraft::new()));
+    }
+
+    /// Closes and cancels the inline contact creation sub-form.
+    pub fn close_inline_contact(&mut self) {
+        self.inline_contact = None;
+    }
+
+    /// Toggles the inline contact creation sub-form open/closed state.
+    pub fn toggle_inline_contact(&mut self) {
+        if self.inline_contact.is_some() {
+            self.inline_contact = None;
+        } else {
+            self.inline_contact = Some(Box::new(ContactDraft::new()));
+        }
+    }
+
+    /// Returns `true` if the inline contact creation sub-form is open.
+    #[must_use]
+    pub const fn is_inline_contact_open(&self) -> bool {
+        self.inline_contact.is_some()
+    }
+
+    /// Updates the name field of the inline contact sub-form.
+    pub fn set_inline_contact_name(&mut self, name: &str) {
+        if let Some(ref mut contact_draft) = self.inline_contact {
+            contact_draft.name = name.to_string();
+            contact_draft.validate();
+        }
+    }
+
+    /// Updates the organization field of the inline contact sub-form.
+    pub fn set_inline_contact_org(&mut self, org: &str) {
+        if let Some(ref mut contact_draft) = self.inline_contact {
+            contact_draft.organization = org.to_string();
+        }
+    }
+
+    /// Updates the role field of the inline contact sub-form.
+    pub fn set_inline_contact_role(&mut self, role: &str) {
+        if let Some(ref mut contact_draft) = self.inline_contact {
+            contact_draft.role = role.to_string();
+        }
+    }
+
+    /// Updates the email field of the inline contact sub-form.
+    pub fn set_inline_contact_email(&mut self, email: &str) {
+        if let Some(ref mut contact_draft) = self.inline_contact {
+            contact_draft.email = email.to_string();
+            contact_draft.validate();
+        }
+    }
+
+    /// Updates the phone field of the inline contact sub-form.
+    pub fn set_inline_contact_phone(&mut self, phone: &str) {
+        if let Some(ref mut contact_draft) = self.inline_contact {
+            contact_draft.phone = phone.to_string();
+            contact_draft.validate();
+        }
+    }
+
+    /// Updates the notes field of the inline contact sub-form.
+    pub fn set_inline_contact_notes(&mut self, notes: &str) {
+        if let Some(ref mut contact_draft) = self.inline_contact {
+            contact_draft.notes = notes.to_string();
+        }
     }
 
     /// Checks whether the current slug collides with any existing articles (excluding this article's ID).

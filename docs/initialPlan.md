@@ -104,7 +104,7 @@ Based on the architectural alignment and design interview:
   - Stage selector dropdown.
   - Deadline picker (Date + optional Time selector).
   - Color picker swatch (defaults to generated hash color, allowing custom override).
-- [ ] **6.3 Contact Tagging Sub-Section**:
+- [x] **6.3 Contact Tagging Sub-Section**:
   - Searchable multi-select pill selector for existing contacts.
   - Inline "Create Contact" shortcut directly from the article form.
 - [ ] **6.4 Inline Task Management Sub-Section**:

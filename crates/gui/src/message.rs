@@ -74,6 +74,22 @@ pub enum AppMessage {
     SetArticleDraftColor(String),
     /// Resets the color of the active article draft to the slug-derived hash color.
     ResetArticleDraftColorToSlug,
+    /// Toggles a contact ID in the active article draft's tagged contacts.
+    ToggleArticleDraftContact(Uuid),
+    /// Adds a contact ID to the active article draft's tagged contacts.
+    AddArticleDraftContact(Uuid),
+    /// Removes a contact ID from the active article draft's tagged contacts.
+    RemoveArticleDraftContact(Uuid),
+    /// Updates the contact search filter query in the active article draft.
+    SetArticleDraftContactSearch(String),
+    /// Opens the inline contact creation sub-form in the active article draft.
+    OpenArticleDraftInlineContact,
+    /// Closes/cancels the inline contact creation sub-form in the active article draft.
+    CloseArticleDraftInlineContact,
+    /// Updates the fields in the active article draft's inline contact form.
+    UpdateArticleDraftInlineContact(ContactDraft),
+    /// Validates, saves, and automatically tags the inline contact in the active article draft.
+    SaveArticleDraftInlineContact,
     /// Updates the in-progress draft for a task form.
     UpdateTaskDraft(TaskDraft),
     /// Updates the in-progress draft for a contact form.
