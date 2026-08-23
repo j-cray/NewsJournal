@@ -16,10 +16,10 @@ use crate::state::AppState;
 use crate::theme::detector::{SystemThemeDetector, SystemThemeWatcher};
 use crate::theme::ResolvedTheme;
 use crate::views::{
-    build_articles_kanban_view, build_contacts_view, build_modal_view, build_nav_view_models,
+    build_articles_kanban_deck, build_contacts_view, build_modal_view, build_nav_view_models,
     build_settings_view_with_platform, build_tasks_kanban_view, build_toast_view,
-    ArticleColumnViewModel, ContactListItemViewModel, ModalViewModel, NavItemViewModel,
-    SettingsViewModel, TaskColumnViewModel, ToastContainerViewModel,
+    ArticleColumnViewModel, ArticlesKanbanDeckViewModel, ContactListItemViewModel, ModalViewModel,
+    NavItemViewModel, SettingsViewModel, TaskColumnViewModel, ToastContainerViewModel,
 };
 
 /// High-level presentation descriptor representing the complete macOS Liquid Glass view tree.
@@ -37,9 +37,13 @@ pub struct MacosViewTreeDescriptor {
     pub nav_items: Vec<NavItemViewModel>,
     /// Left navigation sidebar liquid glass style.
     pub sidebar_glass_style: MacosGlassStyle,
+    /// Kanban column liquid glass style.
+    pub column_glass_style: MacosGlassStyle,
     /// Active tab.
     pub active_tab: NavTab,
     /// Articles Kanban deck (if active tab is ArticlesKanban).
+    pub articles_deck: Option<ArticlesKanbanDeckViewModel>,
+    /// Articles Kanban columns list (if active tab is ArticlesKanban).
     pub articles_view: Option<Vec<ArticleColumnViewModel>>,
     /// Tasks Kanban deck (if active tab is TasksKanban).
     pub tasks_view: Option<Vec<TaskColumnViewModel>>,
@@ -209,13 +213,15 @@ impl MacosApp {
 
         let toolbar_glass_style = glass.style_for(MacosContainerClass::Toolbar, app_theme);
         let sidebar_glass_style = glass.style_for(MacosContainerClass::Sidebar, app_theme);
+        let column_glass_style = glass.style_for(MacosContainerClass::KanbanColumn, app_theme);
 
         let nav_items = build_nav_view_models(state);
 
-        let articles_view = if state.active_tab == NavTab::ArticlesKanban {
-            Some(build_articles_kanban_view(state))
+        let (articles_view, articles_deck) = if state.active_tab == NavTab::ArticlesKanban {
+            let deck = build_articles_kanban_deck(state);
+            (Some(deck.columns.clone()), Some(deck))
         } else {
-            None
+            (None, None)
         };
 
         let tasks_view = if state.active_tab == NavTab::TasksKanban {
@@ -258,7 +264,9 @@ impl MacosApp {
             nav_bar,
             nav_items,
             sidebar_glass_style,
+            column_glass_style,
             active_tab: state.active_tab,
+            articles_deck,
             articles_view,
             tasks_view,
             contacts_view,

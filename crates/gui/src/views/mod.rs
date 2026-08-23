@@ -8,7 +8,12 @@ pub mod settings;
 pub mod tasks;
 pub mod toast;
 
-pub use articles::{build_articles_kanban_view, ArticleCardViewModel, ArticleColumnViewModel};
+pub use articles::{
+    build_articles_kanban_deck, build_articles_kanban_deck_with_layout, build_articles_kanban_view,
+    stage_metadata, ArticleCardViewModel, ArticleColumnViewModel, ArticlesKanbanDeckViewModel,
+    DeckLayoutConfig, StageMetadata, DEFAULT_COLUMN_GAP, DEFAULT_COLUMN_WIDTH,
+    DEFAULT_DECK_PADDING, MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH, NUM_ARTICLE_STAGES,
+};
 pub use contacts::{build_contacts_view, ContactListItemViewModel};
 pub use modal::{build_modal_view, ModalViewModel};
 pub use nav::{
