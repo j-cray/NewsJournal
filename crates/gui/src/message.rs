@@ -102,6 +102,20 @@ pub enum AppMessage {
     DeleteArticleDraftTask(Uuid),
     /// Updates the in-progress draft for a task form.
     UpdateTaskDraft(TaskDraft),
+    /// Updates the title field of the active task draft.
+    UpdateTaskDraftTitle(String),
+    /// Updates the parent article ID of the active task draft.
+    UpdateTaskDraftArticle(Option<Uuid>),
+    /// Updates the notes field of the active task draft.
+    UpdateTaskDraftNotes(String),
+    /// Updates the workflow status of the active task draft.
+    SetTaskDraftStatus(TaskStatus),
+    /// Updates the due date timestamp of the active task draft.
+    SetTaskDraftDueDate(Option<DateTime<Utc>>),
+    /// Applies a quick deadline preset to the active task draft.
+    SetTaskDraftDueDatePreset(DeadlinePreset),
+    /// Clears the due date timestamp on the active task draft.
+    ClearTaskDraftDueDate,
     /// Updates the in-progress draft for a contact form.
     UpdateContactDraft(ContactDraft),
     /// Updates the in-progress draft for settings.

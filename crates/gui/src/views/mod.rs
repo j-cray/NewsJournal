@@ -8,8 +8,16 @@ pub mod modal;
 pub mod nav;
 pub mod settings;
 pub mod task_card;
+pub mod task_form;
 pub mod tasks;
 pub mod toast;
+
+pub use task_form::{
+    build_task_form_view, TaskDueDateFieldViewModel, TaskFormHeaderViewModel, TaskFormViewModel,
+    TaskNotesFieldViewModel, TaskParentArticleOptionViewModel, TaskParentArticlePickerViewModel,
+    TaskStatusOptionViewModel, TaskStatusPickerViewModel, TaskTitleFieldViewModel,
+    MAX_TASK_TITLE_LENGTH,
+};
 
 pub use article_form::{
     build_article_form_view, ArticleColorPickerViewModel, ArticleDeadlineFieldViewModel,

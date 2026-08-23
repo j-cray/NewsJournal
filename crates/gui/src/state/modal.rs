@@ -484,6 +484,58 @@ impl TaskDraft {
         }
     }
 
+    /// Updates the title field and performs live validation.
+    pub fn set_title(&mut self, title: &str) {
+        self.title = title.to_string();
+        if let Err(e) = validate_task_title(&self.title) {
+            self.validation_errors
+                .insert("title".to_string(), e.to_string());
+        } else {
+            self.validation_errors.remove("title");
+        }
+    }
+
+    /// Updates the parent article ID and performs live validation.
+    pub fn set_article_id(&mut self, article_id: Option<Uuid>) {
+        self.article_id = article_id;
+        if self.article_id.is_none() {
+            self.validation_errors.insert(
+                "article_id".to_string(),
+                "Parent article must be selected".to_string(),
+            );
+        } else {
+            self.validation_errors.remove("article_id");
+        }
+    }
+
+    /// Updates the task detailed notes.
+    pub fn set_notes(&mut self, notes: &str) {
+        self.notes = notes.to_string();
+    }
+
+    /// Updates the task workflow status.
+    pub fn set_status(&mut self, status: TaskStatus) {
+        self.status = status;
+    }
+
+    /// Updates the optional due date timestamp.
+    pub fn set_due_date(&mut self, due_date: Option<DateTime<Utc>>) {
+        self.due_date = due_date;
+    }
+
+    /// Clears the due date timestamp.
+    pub fn clear_due_date(&mut self) {
+        self.due_date = None;
+    }
+
+    /// Returns `true` if there are currently no validation errors and required fields are present.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.validation_errors.is_empty()
+            && self.article_id.is_some()
+            && validate_task_title(&self.title).is_ok()
+    }
+
     /// Validates draft fields and updates `validation_errors`. Returns `true` if valid.
     pub fn validate(&mut self) -> bool {
         self.validation_errors.clear();
@@ -879,5 +931,54 @@ mod tests {
         draft.set_slug("port-security-follow-up");
         assert!(!draft.slug_collides_with(&existing));
         assert!(draft.validate_with_existing_slugs(&existing));
+    }
+
+    #[test]
+    fn test_task_draft_setters_and_lifecycle() {
+        let mut draft = TaskDraft::default();
+        assert!(!draft.is_valid());
+
+        // Set title
+        draft.set_title("  ");
+        assert!(!draft.is_valid());
+        assert!(draft.validation_errors.contains_key("title"));
+
+        draft.set_title("Verify FOIA documents");
+        assert!(!draft.validation_errors.contains_key("title"));
+
+        // Set parent article
+        let article_id = Uuid::new_v4();
+        draft.set_article_id(Some(article_id));
+        assert!(!draft.validation_errors.contains_key("article_id"));
+        assert!(draft.is_valid());
+
+        // Set notes, status, due date
+        draft.set_notes("Check page 42 regarding procurement numbers");
+        draft.set_status(TaskStatus::InProgress);
+        let due = Utc::now();
+        draft.set_due_date(Some(due));
+
+        assert_eq!(draft.status, TaskStatus::InProgress);
+        assert_eq!(draft.due_date, Some(due));
+        assert_eq!(draft.notes, "Check page 42 regarding procurement numbers");
+
+        let task = draft.to_task().expect("valid task");
+        assert_eq!(task.article_id, article_id);
+        assert_eq!(task.title, "Verify FOIA documents");
+        assert_eq!(task.status, TaskStatus::InProgress);
+        assert_eq!(task.due_date, Some(due));
+        assert_eq!(
+            task.notes.as_deref(),
+            Some("Check page 42 regarding procurement numbers")
+        );
+
+        // Clear due date
+        draft.clear_due_date();
+        assert!(draft.due_date.is_none());
+
+        // Unset article
+        draft.set_article_id(None);
+        assert!(!draft.is_valid());
+        assert!(draft.validation_errors.contains_key("article_id"));
     }
 }

@@ -399,6 +399,56 @@ impl AppState {
                 self.modal = ModalState::TaskForm(draft);
                 Vec::new()
             }
+            AppMessage::UpdateTaskDraftTitle(title) => {
+                if let ModalState::TaskForm(mut draft) = self.modal.clone() {
+                    draft.set_title(&title);
+                    self.modal = ModalState::TaskForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::UpdateTaskDraftArticle(article_id) => {
+                if let ModalState::TaskForm(mut draft) = self.modal.clone() {
+                    draft.set_article_id(article_id);
+                    self.modal = ModalState::TaskForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::UpdateTaskDraftNotes(notes) => {
+                if let ModalState::TaskForm(mut draft) = self.modal.clone() {
+                    draft.set_notes(&notes);
+                    self.modal = ModalState::TaskForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::SetTaskDraftStatus(status) => {
+                if let ModalState::TaskForm(mut draft) = self.modal.clone() {
+                    draft.set_status(status);
+                    self.modal = ModalState::TaskForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::SetTaskDraftDueDate(due_date) => {
+                if let ModalState::TaskForm(mut draft) = self.modal.clone() {
+                    draft.set_due_date(due_date);
+                    self.modal = ModalState::TaskForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::SetTaskDraftDueDatePreset(preset) => {
+                if let ModalState::TaskForm(mut draft) = self.modal.clone() {
+                    let now = Utc::now();
+                    draft.set_due_date(preset.calculate_target_datetime(now));
+                    self.modal = ModalState::TaskForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::ClearTaskDraftDueDate => {
+                if let ModalState::TaskForm(mut draft) = self.modal.clone() {
+                    draft.clear_due_date();
+                    self.modal = ModalState::TaskForm(draft);
+                }
+                Vec::new()
+            }
             AppMessage::UpdateContactDraft(draft) => {
                 self.modal = ModalState::ContactForm(draft);
                 Vec::new()
@@ -466,6 +516,15 @@ impl AppState {
                             match draft.to_task() {
                                 Ok(task) => {
                                     let title = task.title.clone();
+                                    let task_id = task.id;
+                                    if let Some(pos) =
+                                        self.tasks.iter().position(|t| t.id == task_id)
+                                    {
+                                        self.tasks[pos] = task.clone();
+                                    } else {
+                                        self.tasks.push(task.clone());
+                                    }
+
                                     vec![
                                         AppCommand::SaveTask(task),
                                         AppCommand::EmitToast(ToastMessage::success(
@@ -539,6 +598,9 @@ impl AppState {
                         ]
                     }
                     ModalState::ConfirmDeleteTask { id, title } => {
+                        if let Some(pos) = self.tasks.iter().position(|t| t.id == id) {
+                            self.tasks.remove(pos);
+                        }
                         vec![
                             AppCommand::DeleteTask(id),
                             AppCommand::EmitToast(ToastMessage::info(
@@ -587,12 +649,23 @@ impl AppState {
                 vec![AppCommand::MoveArticleStage { id, stage }]
             }
             AppMessage::CreateTask(task) => {
+                if !self.tasks.iter().any(|t| t.id == task.id) {
+                    self.tasks.push(task.clone());
+                }
                 vec![AppCommand::SaveTask(task)]
             }
             AppMessage::UpdateTask(task) => {
+                if let Some(pos) = self.tasks.iter().position(|t| t.id == task.id) {
+                    self.tasks[pos] = task.clone();
+                } else {
+                    self.tasks.push(task.clone());
+                }
                 vec![AppCommand::SaveTask(task)]
             }
             AppMessage::DeleteTask(id) => {
+                if let Some(pos) = self.tasks.iter().position(|t| t.id == id) {
+                    self.tasks.remove(pos);
+                }
                 vec![AppCommand::DeleteTask(id)]
             }
             AppMessage::MoveTaskStatus(id, status) => {

@@ -651,6 +651,7 @@ impl ModalGlassMaterial {
 }
 
 use crate::views::article_form::{build_article_form_view, ArticleFormViewModel};
+use crate::views::task_form::{build_task_form_view_with_layout, TaskFormViewModel};
 
 /// Unified presentation descriptor for an active in-app glass modal or slide-over drawer.
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -671,6 +672,8 @@ pub struct ModalContainerViewModel {
     pub glass: ModalGlassMaterial,
     /// Active article form fields presentation model (when an ArticleForm is open).
     pub article_form: Option<ArticleFormViewModel>,
+    /// Active task form fields presentation model (when a TaskForm is open).
+    pub task_form: Option<TaskFormViewModel>,
     /// Active modal state snapshot.
     pub state: ModalState,
 }
@@ -757,6 +760,13 @@ pub fn build_modal_container_view_with_layout(
         _ => None,
     };
 
+    let task_form = match &state.modal {
+        ModalState::TaskForm(draft) => {
+            Some(build_task_form_view_with_layout(state, draft, is_macos))
+        }
+        _ => None,
+    };
+
     ModalContainerViewModel {
         is_open,
         placement,
@@ -766,6 +776,7 @@ pub fn build_modal_container_view_with_layout(
         footer,
         glass,
         article_form,
+        task_form,
         state: state.modal.clone(),
     }
 }
