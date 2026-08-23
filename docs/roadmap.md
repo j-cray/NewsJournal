@@ -63,7 +63,7 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Phase 2.4 integration test suite for full relational cascades and persistence lifecycle.
 - [x] Implement `newsjournal-gui` scaffolding with shared `AppState`, `AppMessage`, reducer, and event loop (Task 3.1).
 - [x] Implement Linux COSMIC desktop wrapper, frosted glass materials, header bar, and window sizing (Task 3.2).
-- [ ] Implement macOS Liquid Glass integration with `iced` + `window_vibrancy` (Task 3.3).
+- [x] Implement macOS Liquid Glass integration with `iced` + `window_vibrancy` (Task 3.3).
 - [ ] Implement theme engine integration with dynamic System/Light/Dark switching (Task 3.4).
 
 

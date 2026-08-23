@@ -139,6 +139,38 @@ println!("COSMIC Window Title: {}", view_tree.window_title);
 println!("Header Bar: {}", view_tree.header_bar.display_title());
 ```
 
+### 6. macOS Liquid Glass & Vibrancy Integration
+
+```rust
+use newsjournal_core::storage::StorageService;
+use newsjournal_gui::macos::{
+    MacosApp, MacosAppConfig, MacosAppearanceMode, MacosThemeAdapter,
+    MacosAccentColor, MacosVibrancyConfig, MacosVibrancyMaterial,
+};
+use newsjournal_gui::AppState;
+
+// Setup macOS app wrapper with Liquid Glass materials and native NSVisualEffectView vibrancy
+let storage = StorageService::in_memory()?;
+let mut state = AppState::new(storage);
+state.load_all()?;
+
+let config = MacosAppConfig {
+    theme_adapter: MacosThemeAdapter::new(
+        MacosAppearanceMode::DarkAqua,
+        MacosAccentColor::Purple,
+        true,
+    ),
+    vibrancy: MacosVibrancyConfig::with_material(MacosVibrancyMaterial::UnderWindowBackground),
+    ..Default::default()
+};
+
+let mut app = MacosApp::with_config(state, config);
+let view_tree = app.build_view_tree();
+
+println!("macOS Window Title: {}", view_tree.window_title);
+println!("macOS Toolbar: {}", view_tree.toolbar.display_title());
+```
+
 ---
 
 

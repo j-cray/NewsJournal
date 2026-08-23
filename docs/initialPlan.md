@@ -60,7 +60,7 @@ Based on the architectural alignment and design interview:
   - Integrate `libcosmic` application wrapper.
   - Configure COSMIC frosted glass theme styling and background blur materials.
   - Setup COSMIC app icon, header bar, and window sizing.
-- [ ] **3.3 macOS Liquid Glass Implementation (`#[cfg(target_os = "macos")]`)**:
+- [x] **3.3 macOS Liquid Glass Implementation (`#[cfg(target_os = "macos")]`)**:
   - Integrate `iced` with `window_vibrancy` for macOS native window blur (`NSVisualEffectView`).
   - Implement custom iced container styles mimicking liquid glass with backdrop translucency and subtle border highlights.
 - [ ] **3.4 Theme Engine Integration**: Connect GUI to system theme detector, handling dynamic switching between `System`, `Light`, and `Dark`.
