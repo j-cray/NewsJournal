@@ -29,7 +29,20 @@
             cargo-nextest
             pkg-config
             openssl
-          ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin (with pkgs.darwin.apple_sdk.frameworks; [
+            cmake
+            fontconfig
+            freetype
+            libxkbcommon
+            wayland
+            libGL
+            vulkan-loader
+            libx11
+            libxcursor
+            libxi
+            libxrandr
+          ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux (with pkgs; [
+            # Linux specific runtime and build libraries
+          ]) ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin (with pkgs.darwin.apple_sdk.frameworks; [
             Security
             SystemConfiguration
             CoreServices
@@ -41,6 +54,18 @@
 
           shellHook = ''
             export RUST_BACKTRACE=1
+            export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath (with pkgs; [
+              fontconfig
+              freetype
+              libxkbcommon
+              wayland
+              libGL
+              vulkan-loader
+              libx11
+              libxcursor
+              libxi
+              libxrandr
+            ])}:$LD_LIBRARY_PATH"
           '';
         };
       }
