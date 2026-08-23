@@ -113,7 +113,7 @@ Based on the architectural alignment and design interview:
 - [x] **6.5 Save & Cancel Actions**: Keyboard shortcuts (`Escape` to close, `Ctrl+S`/`Cmd+S` to save) and error validation tooltips.
 
 ### Phase 7: Tasks Kanban Board & Article-Task Synchronization
-- [ ] **7.1 Tasks Kanban Deck Layout**: 3-column workflow board:
+- [x] **7.1 Tasks Kanban Deck Layout**: 3-column workflow board:
   1. To-Do
   2. In Progress
   3. Complete
