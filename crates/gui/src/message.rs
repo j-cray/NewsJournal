@@ -90,6 +90,14 @@ pub enum AppMessage {
     UpdateArticleDraftInlineContact(ContactDraft),
     /// Validates, saves, and automatically tags the inline contact in the active article draft.
     SaveArticleDraftInlineContact,
+    /// Updates the quick-add task input text in the active article draft.
+    SetArticleDraftQuickTask(String),
+    /// Validates and adds the quick task to the active article draft (staged or persisted).
+    AddArticleDraftQuickTask,
+    /// Toggles the completion status (ToDo <-> Complete) of an article task inline.
+    ToggleArticleDraftTask(Uuid),
+    /// Deletes an article task inline from the article form.
+    DeleteArticleDraftTask(Uuid),
     /// Updates the in-progress draft for a task form.
     UpdateTaskDraft(TaskDraft),
     /// Updates the in-progress draft for a contact form.

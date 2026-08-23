@@ -41,6 +41,10 @@ pub struct ArticleDraft {
     pub contact_search_query: String,
     /// In-progress draft for inline contact creation, if open.
     pub inline_contact: Option<Box<ContactDraft>>,
+    /// Current text entered in the quick-add task input field.
+    pub quick_task_title: String,
+    /// Staged tasks created inline for this article draft before submission.
+    pub staged_tasks: Vec<Task>,
     /// Validation error messages keyed by field name.
     pub validation_errors: HashMap<String, String>,
 }
@@ -85,6 +89,8 @@ impl ArticleDraft {
             tagged_contact_ids,
             contact_search_query: String::new(),
             inline_contact: None,
+            quick_task_title: String::new(),
+            staged_tasks: Vec::new(),
             validation_errors: HashMap::new(),
         }
     }
@@ -283,6 +289,51 @@ impl ArticleDraft {
     pub fn set_inline_contact_notes(&mut self, notes: &str) {
         if let Some(ref mut contact_draft) = self.inline_contact {
             contact_draft.notes = notes.to_string();
+        }
+    }
+
+    /// Updates the title string typed into the quick-add task input.
+    pub fn set_quick_task_title(&mut self, title: &str) {
+        self.quick_task_title = title.to_string();
+    }
+
+    /// Clears the quick-add task input field.
+    pub fn clear_quick_task_title(&mut self) {
+        self.quick_task_title.clear();
+    }
+
+    /// Returns `true` if the currently typed quick-task title passes validation.
+    #[must_use]
+    pub fn is_quick_task_valid(&self) -> bool {
+        validate_task_title(&self.quick_task_title).is_ok()
+    }
+
+    /// Adds a new task to the staged tasks list for this draft if valid.
+    pub fn add_staged_task(&mut self, title: &str) -> Result<Task, String> {
+        let clean = title.trim();
+        validate_task_title(clean).map_err(|e| e.to_string())?;
+
+        let article_id = self.id.unwrap_or(Uuid::nil());
+        let task = Task::new(article_id, clean);
+        self.staged_tasks.push(task.clone());
+        self.clear_quick_task_title();
+        Ok(task)
+    }
+
+    /// Removes a staged task by ID.
+    pub fn remove_staged_task(&mut self, task_id: Uuid) {
+        self.staged_tasks.retain(|t| t.id != task_id);
+    }
+
+    /// Toggles the completion status of a staged task by ID.
+    pub fn toggle_staged_task(&mut self, task_id: Uuid) {
+        if let Some(task) = self.staged_tasks.iter_mut().find(|t| t.id == task_id) {
+            task.status = if task.status == TaskStatus::Complete {
+                TaskStatus::ToDo
+            } else {
+                TaskStatus::Complete
+            };
+            task.updated_at = Utc::now();
         }
     }
 
