@@ -17,8 +17,8 @@ This document serves as the living roadmap tracking project milestones, current 
 | **Phase 1** | Workspace Setup & Core Domain Models (`newsjournal-core`) | ✅ Complete | All |
 | **Phase 2** | SQLite Persistence Engine & Migrations | ✅ Complete | All |
 | **Phase 3** | GUI Scaffolding & Cross-Platform Glass Architecture | ✅ Complete | Linux & macOS |
-| **Phase 4** | Vertical Left Navigation Bar & Settings / Theme Engine | 🟡 In Progress | Linux & macOS |
-| **Phase 5** | Articles Kanban Board (6 Production Stages) & Drag-and-Drop | ⏳ In Planning | Linux & macOS |
+| **Phase 4** | Vertical Left Navigation Bar & Settings / Theme Engine | ✅ Complete | Linux & macOS |
+| **Phase 5** | Articles Kanban Board (6 Production Stages) & Drag-and-Drop | 🟡 In Progress | Linux & macOS |
 | **Phase 6** | Article Creation & Edit Glass Modal / Drawer | ⏳ In Planning | Linux & macOS |
 | **Phase 7** | Tasks Kanban Board & Article-Task Synchronization | ⏳ In Planning | Linux & macOS |
 | **Phase 8** | Contacts Directory & Article Tagging System | ⏳ In Planning | Linux & macOS |
@@ -70,6 +70,7 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement macOS Liquid Glass integration with `iced` + `window_vibrancy` (Task 3.3).
 - [x] Implement theme engine integration with dynamic System/Light/Dark switching (Task 3.4).
 - [x] Implement Left Navigation Bar component, active tab highlighting, badge metrics, and keyboard shortcuts (Task 4.1).
-- [ ] Implement Settings Page with theme mode selection, database info, and persistence (Task 4.2).
+- [x] Implement Settings Page with theme mode selection, database info, and persistence (Task 4.2).
+- [ ] Implement Articles Kanban Board deck layout with 6 production stage columns (Task 5.1).
 
 

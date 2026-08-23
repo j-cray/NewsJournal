@@ -73,7 +73,7 @@ Based on the architectural alignment and design interview:
     3. 👥 Contacts Directory
     4. ⚙️ Settings (docked at the bottom)
   - Active tab highlighting and keyboard navigation shortcuts.
-- [ ] **4.2 Settings Page**:
+- [x] **4.2 Settings Page**:
   - Theme mode selector (`System` / `Light` / `Dark`) with immediate preview.
   - Database status / path display and version information.
   - Persistence of user settings to SQLite database upon selection.

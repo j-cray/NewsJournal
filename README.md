@@ -213,6 +213,27 @@ if let Some(action) = resolve_nav_shortcut("2", linux_ctrl, false) {
 assert_eq!(event_loop.state().active_tab, NavTab::TasksKanban);
 ```
 
+### 9. Settings Page, Theme Selector & Database Diagnostics
+
+```rust
+use newsjournal_core::models::ThemeMode;
+use newsjournal_gui::views::build_settings_view;
+use newsjournal_gui::{AppMessage, AppState, EventLoop};
+
+let state = AppState::in_memory()?;
+let mut event_loop = EventLoop::new(state);
+
+// Build rich settings view model with live theme preview color swatches and database stats
+let settings_view = build_settings_view(event_loop.state());
+println!("Active Theme: {}", settings_view.theme_mode);
+println!("Database Status: {}", settings_view.database.status_label);
+println!("Schema Version: {}", settings_view.database.schema_version_formatted);
+
+// Switch theme with immediate visual preview and persistence to SQLite
+event_loop.dispatch(AppMessage::SetThemeMode(ThemeMode::Light))?;
+assert_eq!(event_loop.state().settings.theme_mode, ThemeMode::Light);
+```
+
 ---
 
 
