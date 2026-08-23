@@ -31,6 +31,31 @@ fn test_navigation_transitions() {
         .dispatch(AppMessage::NavigateTo(NavTab::ArticlesKanban))
         .unwrap();
     assert_eq!(event_loop.state().active_tab, NavTab::ArticlesKanban);
+
+    // Cyclic next navigation
+    event_loop.dispatch(AppMessage::NavigateNextTab).unwrap();
+    assert_eq!(event_loop.state().active_tab, NavTab::TasksKanban);
+
+    event_loop.dispatch(AppMessage::NavigateNextTab).unwrap();
+    assert_eq!(event_loop.state().active_tab, NavTab::ContactsDirectory);
+
+    // Cyclic prev navigation
+    event_loop.dispatch(AppMessage::NavigatePrevTab).unwrap();
+    assert_eq!(event_loop.state().active_tab, NavTab::TasksKanban);
+
+    event_loop.dispatch(AppMessage::NavigatePrevTab).unwrap();
+    assert_eq!(event_loop.state().active_tab, NavTab::ArticlesKanban);
+
+    event_loop.dispatch(AppMessage::NavigatePrevTab).unwrap();
+    assert_eq!(event_loop.state().active_tab, NavTab::Settings);
+
+    // Direct nav key action
+    event_loop
+        .dispatch(AppMessage::HandleNavKeyAction(
+            newsjournal_gui::navigation::NavKeyAction::FirstTab,
+        ))
+        .unwrap();
+    assert_eq!(event_loop.state().active_tab, NavTab::ArticlesKanban);
 }
 
 #[test]

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::message::AppMessage;
 use crate::navigation::NavTab;
 use crate::platform::macos::glass::{MacosContainerClass, MacosGlassStyle, MacosLiquidGlass};
+use crate::platform::macos::sidebar::MacosNavBar;
 use crate::platform::macos::theme::{MacosAppearanceMode, MacosThemeAdapter};
 use crate::platform::macos::toolbar::{MacosToolbar, MacosToolbarAction};
 use crate::platform::macos::vibrancy::MacosVibrancyConfig;
@@ -30,6 +31,8 @@ pub struct MacosViewTreeDescriptor {
     pub toolbar: MacosToolbar,
     /// Toolbar liquid glass styling properties.
     pub toolbar_glass_style: MacosGlassStyle,
+    /// Left vertical navigation bar component.
+    pub nav_bar: MacosNavBar,
     /// Left vertical navigation tabs view models.
     pub nav_items: Vec<NavItemViewModel>,
     /// Left navigation sidebar liquid glass style.
@@ -243,11 +246,13 @@ impl MacosApp {
         };
 
         let toast_view = build_toast_view(state);
+        let nav_bar = MacosNavBar::new(state, glass, &self.config.vibrancy, false);
 
         MacosViewTreeDescriptor {
             window_title,
             toolbar: self.toolbar.clone(),
             toolbar_glass_style,
+            nav_bar,
             nav_items,
             sidebar_glass_style,
             active_tab: state.active_tab,

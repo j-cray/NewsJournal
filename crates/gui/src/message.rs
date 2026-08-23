@@ -7,7 +7,7 @@ use newsjournal_core::models::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::navigation::NavTab;
+use crate::navigation::{NavKeyAction, NavTab};
 use crate::state::drag_drop::{DragItem, DropTarget};
 use crate::state::filters::UrgencyFilter;
 use crate::state::modal::{ArticleDraft, ContactDraft, SettingsDraft, TaskDraft};
@@ -21,6 +21,12 @@ pub enum AppMessage {
     // ==========================================
     /// Switch active navigation view to specified tab.
     NavigateTo(NavTab),
+    /// Cycle to next navigation tab in visual order.
+    NavigateNextTab,
+    /// Cycle to previous navigation tab in visual order.
+    NavigatePrevTab,
+    /// Process a resolved keyboard navigation action.
+    HandleNavKeyAction(NavKeyAction),
 
     // ==========================================
     // Modal & Drawer Lifecycle

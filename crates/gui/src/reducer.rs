@@ -6,6 +6,7 @@ use newsjournal_core::models::TaskStatus;
 
 use crate::commands::AppCommand;
 use crate::message::AppMessage;
+use crate::navigation::{NavKeyAction, NavTab};
 use crate::state::drag_drop::{DragItem, DropTarget};
 use crate::state::modal::{ArticleDraft, ContactDraft, ModalState, SettingsDraft, TaskDraft};
 use crate::state::toast::ToastMessage;
@@ -20,7 +21,25 @@ impl AppState {
             // Navigation
             // ==========================================
             AppMessage::NavigateTo(tab) => {
-                self.active_tab = tab;
+                self.navigate_to(tab);
+                Vec::new()
+            }
+            AppMessage::NavigateNextTab => {
+                self.navigate_next();
+                Vec::new()
+            }
+            AppMessage::NavigatePrevTab => {
+                self.navigate_prev();
+                Vec::new()
+            }
+            AppMessage::HandleNavKeyAction(action) => {
+                match action {
+                    NavKeyAction::SelectTab(tab) => self.navigate_to(tab),
+                    NavKeyAction::NextTab => self.navigate_next(),
+                    NavKeyAction::PrevTab => self.navigate_prev(),
+                    NavKeyAction::FirstTab => self.navigate_to(NavTab::ArticlesKanban),
+                    NavKeyAction::LastTab => self.navigate_to(NavTab::Settings),
+                }
                 Vec::new()
             }
 

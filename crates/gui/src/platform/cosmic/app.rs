@@ -8,6 +8,7 @@ use crate::navigation::NavTab;
 use crate::platform::cosmic::glass::{CosmicContainerClass, CosmicFrostedGlass, CosmicGlassStyle};
 use crate::platform::cosmic::header_bar::{CosmicHeaderBar, CosmicHeaderBarAction};
 use crate::platform::cosmic::icon::CosmicIconManager;
+use crate::platform::cosmic::sidebar::CosmicNavBar;
 use crate::platform::cosmic::theme::{CosmicThemeAdapter, CosmicThemeMode};
 use crate::platform::cosmic::window::CosmicWindowConfig;
 use crate::runtime::EventLoop;
@@ -30,6 +31,8 @@ pub struct CosmicViewTreeDescriptor {
     pub header_bar: CosmicHeaderBar,
     /// Header bar frosted glass style.
     pub header_glass_style: CosmicGlassStyle,
+    /// Left vertical navigation bar component.
+    pub nav_bar: CosmicNavBar,
     /// Left vertical navigation tabs view models.
     pub nav_items: Vec<NavItemViewModel>,
     /// Left navigation sidebar frosted glass style.
@@ -244,11 +247,13 @@ impl CosmicApp {
         };
 
         let toast_view = build_toast_view(state);
+        let nav_bar = CosmicNavBar::new(state, glass, false);
 
         CosmicViewTreeDescriptor {
             window_title,
             header_bar: self.header_bar.clone(),
             header_glass_style,
+            nav_bar,
             nav_items,
             sidebar_glass_style,
             active_tab: state.active_tab,

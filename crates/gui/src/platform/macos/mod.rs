@@ -1,10 +1,11 @@
 //! macOS desktop integration for Liquid Glass and native vibrancy (`iced` + `window_vibrancy`).
 //!
 //! Provides the macOS application wrapper, liquid glass materials, native `NSVisualEffectView`
-//! vibrancy configurations, unified toolbar, system appearance adapter, and window management.
+//! vibrancy configurations, unified toolbar, left navigation bar, system appearance adapter, and window management.
 
 pub mod app;
 pub mod glass;
+pub mod sidebar;
 pub mod theme;
 pub mod toolbar;
 pub mod vibrancy;
@@ -14,6 +15,10 @@ pub use app::{MacosApp, MacosAppConfig, MacosViewTreeDescriptor};
 pub use glass::{
     MacosContainerClass, MacosGlassStyle, MacosLiquidGlass, MACOS_CARD_BLUR_RADIUS,
     MACOS_DEFAULT_BLUR_RADIUS, MACOS_POPOVER_BLUR_RADIUS, MACOS_SHEET_BLUR_RADIUS,
+};
+pub use sidebar::{
+    MacosNavAction, MacosNavBar, MacosNavItemStyle, MACOS_NAV_ITEM_HEIGHT,
+    MACOS_SIDEBAR_COMPACT_WIDTH, MACOS_SIDEBAR_STANDARD_WIDTH,
 };
 pub use theme::{MacosAccentColor, MacosAppearanceMode, MacosThemeAdapter};
 pub use toolbar::{MacosToolbar, MacosToolbarAction, MacosToolbarTabItem};

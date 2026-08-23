@@ -340,6 +340,25 @@ impl AppState {
     pub fn set_error(&mut self, error: Option<String>) {
         self.error_banner = error;
     }
+
+    // ==========================================
+    // Navigation State Transitions
+    // ==========================================
+
+    /// Switches the active navigation view to the specified tab.
+    pub fn navigate_to(&mut self, tab: NavTab) {
+        self.active_tab = tab;
+    }
+
+    /// Cycles the active navigation view to the next tab in visual order.
+    pub fn navigate_next(&mut self) {
+        self.active_tab = self.active_tab.next();
+    }
+
+    /// Cycles the active navigation view to the previous tab in visual order.
+    pub fn navigate_prev(&mut self) {
+        self.active_tab = self.active_tab.prev();
+    }
 }
 
 #[cfg(test)]
