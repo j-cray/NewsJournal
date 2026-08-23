@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::navigation::{NavKeyAction, NavTab};
 use crate::state::drag_drop::{DragItem, DropTarget};
-use crate::state::filters::UrgencyFilter;
+use crate::state::filters::{ContactSortConfig, ContactSortField, SortDirection, UrgencyFilter};
 use crate::state::modal::{ArticleDraft, ContactDraft, SettingsDraft, TaskDraft};
 use crate::state::toast::ToastMessage;
 use crate::views::DeadlinePreset;
@@ -233,6 +233,16 @@ pub enum AppMessage {
     SetContactFilter(Option<Uuid>),
     /// Sets parent article filter for task listings.
     SetArticleFilter(Option<Uuid>),
+    /// Sets the contacts directory sort configuration.
+    SetContactSort(ContactSortConfig),
+    /// Sets the contacts directory sort field.
+    SetContactSortField(ContactSortField),
+    /// Sets the contacts directory sort direction.
+    SetContactSortDirection(SortDirection),
+    /// Toggles or updates the contacts directory sort field.
+    ToggleContactSort(ContactSortField),
+    /// Resets contacts directory sorting to default (Name ASC).
+    ResetContactSort,
     /// Clears all active filters.
     ClearFilters,
 

@@ -16,10 +16,11 @@ use crate::state::AppState;
 use crate::theme::detector::{SystemThemeDetector, SystemThemeWatcher};
 use crate::theme::ResolvedTheme;
 use crate::views::{
-    build_articles_kanban_deck, build_contacts_view, build_modal_container_view, build_modal_view,
-    build_nav_view_models, build_settings_view_with_platform, build_tasks_kanban_deck,
-    build_toast_view, ArticleColumnViewModel, ArticlesKanbanDeckViewModel,
-    ContactListItemViewModel, ModalContainerViewModel, ModalViewModel, NavItemViewModel,
+    build_articles_kanban_deck, build_contacts_directory_view, build_contacts_view,
+    build_modal_container_view, build_modal_view, build_nav_view_models,
+    build_settings_view_with_platform, build_tasks_kanban_deck, build_toast_view,
+    ArticleColumnViewModel, ArticlesKanbanDeckViewModel, ContactListItemViewModel,
+    ContactsDirectoryViewModel, ModalContainerViewModel, ModalViewModel, NavItemViewModel,
     SettingsViewModel, TaskColumnViewModel, TasksKanbanDeckViewModel, ToastContainerViewModel,
 };
 
@@ -52,6 +53,8 @@ pub struct CosmicViewTreeDescriptor {
     pub tasks_view: Option<Vec<TaskColumnViewModel>>,
     /// Contacts view (if active tab is ContactsDirectory).
     pub contacts_view: Option<Vec<ContactListItemViewModel>>,
+    /// Contacts directory complete view model (if active tab is ContactsDirectory).
+    pub contacts_directory: Option<ContactsDirectoryViewModel>,
     /// Settings view (if active tab is Settings).
     pub settings_view: Option<SettingsViewModel>,
     /// In-App Modal / Slide-over Drawer (if a modal is currently open).
@@ -255,10 +258,13 @@ impl CosmicApp {
             (None, None)
         };
 
-        let contacts_view = if state.active_tab == NavTab::ContactsDirectory {
-            Some(build_contacts_view(state))
+        let (contacts_view, contacts_directory) = if state.active_tab == NavTab::ContactsDirectory {
+            (
+                Some(build_contacts_view(state)),
+                Some(build_contacts_directory_view(state)),
+            )
         } else {
-            None
+            (None, None)
         };
 
         let settings_view = if state.active_tab == NavTab::Settings {
@@ -297,6 +303,7 @@ impl CosmicApp {
             tasks_deck,
             tasks_view,
             contacts_view,
+            contacts_directory,
             settings_view,
             modal_view,
             modal_container,

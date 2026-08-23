@@ -46,7 +46,14 @@ pub use articles::{
     DEFAULT_COLUMN_WIDTH, DEFAULT_DECK_PADDING, MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH,
     NUM_ARTICLE_STAGES,
 };
-pub use contacts::{build_contacts_view, ContactListItemViewModel};
+pub use contacts::{
+    assign_avatar_color_for_contact, build_contact_column_headers, build_contacts_directory_view,
+    build_contacts_view, truncate_snippet, ContactColumnHeaderViewModel,
+    ContactLinkedArticleTagViewModel, ContactListItemViewModel, ContactSearchHighlight,
+    ContactsDirectoryViewModel, ContactsEmptyStateViewModel, ContactsToolbarViewModel,
+    CONTACT_AVATAR_SIZE, DEFAULT_CONTACT_ROW_HEIGHT, MAX_DISPLAYED_TAGGED_ARTICLES,
+    MAX_NOTES_SNIPPET_LEN, MAX_ORGANIZATION_SNIPPET_LEN, MAX_ROLE_SNIPPET_LEN,
+};
 pub use modal::{
     build_modal_container_view, build_modal_container_view_with_layout, build_modal_view,
     ModalBackdropViewModel, ModalContainerViewModel, ModalFooterViewModel, ModalGeometry,

@@ -14,7 +14,7 @@ use newsjournal_core::storage::{StorageError, StorageService};
 use uuid::Uuid;
 
 pub use drag_drop::{DragItem, DragState, DropTarget};
-pub use filters::{FilterState, UrgencyFilter};
+pub use filters::{ContactSortConfig, ContactSortField, FilterState, SortDirection, UrgencyFilter};
 pub use modal::{ArticleDraft, ContactDraft, ModalState, SettingsDraft, TaskDraft};
 pub use toast::{ToastKind, ToastMessage};
 
@@ -237,7 +237,7 @@ impl AppState {
         self.contacts.iter().find(|c| c.id == id)
     }
 
-    /// Returns contacts filtered by the active search query.
+    /// Returns contacts filtered by the active search query across name, organization, role, email, phone, notes, and tagged stories.
     #[must_use]
     pub fn filtered_contacts(&self) -> Vec<&Contact> {
         let query = self.filters.search_query.trim().to_lowercase();
@@ -247,7 +247,7 @@ impl AppState {
             self.contacts
                 .iter()
                 .filter(|c| {
-                    c.name.to_lowercase().contains(&query)
+                    if c.name.to_lowercase().contains(&query)
                         || c.organization
                             .as_deref()
                             .map(|o| o.to_lowercase().contains(&query))
@@ -264,9 +264,128 @@ impl AppState {
                             .as_deref()
                             .map(|p| p.contains(&query))
                             .unwrap_or(false)
+                        || c.notes
+                            .as_deref()
+                            .map(|n| n.to_lowercase().contains(&query))
+                            .unwrap_or(false)
+                    {
+                        return true;
+                    }
+
+                    // Check if query matches any tagged article headline or slug
+                    if let Some(article_ids) = self.contact_articles.get(&c.id) {
+                        article_ids.iter().any(|aid| {
+                            if let Some(article) = self.get_article(*aid) {
+                                article.headline.to_lowercase().contains(&query)
+                                    || article.slug.to_lowercase().contains(&query)
+                            } else {
+                                false
+                            }
+                        })
+                    } else {
+                        false
+                    }
                 })
                 .collect()
         }
+    }
+
+    /// Returns contacts filtered by search query and sorted according to `filters.contact_sort`.
+    #[must_use]
+    pub fn sorted_and_filtered_contacts(&self) -> Vec<&Contact> {
+        let mut list = self.filtered_contacts();
+        let sort = self.filters.contact_sort;
+
+        list.sort_by(|a, b| {
+            let ordering = match sort.field {
+                ContactSortField::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                ContactSortField::Organization => {
+                    let a_org = a
+                        .organization
+                        .as_deref()
+                        .unwrap_or("")
+                        .trim()
+                        .to_lowercase();
+                    let b_org = b
+                        .organization
+                        .as_deref()
+                        .unwrap_or("")
+                        .trim()
+                        .to_lowercase();
+                    match (a_org.is_empty(), b_org.is_empty()) {
+                        (true, true) => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                        (true, false) => std::cmp::Ordering::Greater,
+                        (false, true) => std::cmp::Ordering::Less,
+                        (false, false) => a_org
+                            .cmp(&b_org)
+                            .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
+                    }
+                }
+                ContactSortField::Role => {
+                    let a_role = a.role.as_deref().unwrap_or("").trim().to_lowercase();
+                    let b_role = b.role.as_deref().unwrap_or("").trim().to_lowercase();
+                    match (a_role.is_empty(), b_role.is_empty()) {
+                        (true, true) => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                        (true, false) => std::cmp::Ordering::Greater,
+                        (false, true) => std::cmp::Ordering::Less,
+                        (false, false) => a_role
+                            .cmp(&b_role)
+                            .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
+                    }
+                }
+                ContactSortField::Email => {
+                    let a_email = a.email.as_deref().unwrap_or("").trim().to_lowercase();
+                    let b_email = b.email.as_deref().unwrap_or("").trim().to_lowercase();
+                    match (a_email.is_empty(), b_email.is_empty()) {
+                        (true, true) => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                        (true, false) => std::cmp::Ordering::Greater,
+                        (false, true) => std::cmp::Ordering::Less,
+                        (false, false) => a_email
+                            .cmp(&b_email)
+                            .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
+                    }
+                }
+                ContactSortField::Phone => {
+                    let a_phone = a.phone.as_deref().unwrap_or("").trim();
+                    let b_phone = b.phone.as_deref().unwrap_or("").trim();
+                    match (a_phone.is_empty(), b_phone.is_empty()) {
+                        (true, true) => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                        (true, false) => std::cmp::Ordering::Greater,
+                        (false, true) => std::cmp::Ordering::Less,
+                        (false, false) => a_phone
+                            .cmp(b_phone)
+                            .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
+                    }
+                }
+                ContactSortField::StoriesCount => {
+                    let a_count = self.articles_for_contact(a.id).len();
+                    let b_count = self.articles_for_contact(b.id).len();
+                    a_count
+                        .cmp(&b_count)
+                        .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+                }
+                ContactSortField::Recent => a
+                    .created_at
+                    .cmp(&b.created_at)
+                    .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
+            };
+
+            let final_order = if sort.direction.is_descending() {
+                ordering.reverse()
+            } else {
+                ordering
+            };
+
+            final_order.then_with(|| a.id.cmp(&b.id))
+        });
+
+        list
+    }
+
+    /// Returns the total count of contact-article citation links across the directory.
+    #[must_use]
+    pub fn total_contact_citations_count(&self) -> usize {
+        self.contact_articles.values().map(|list| list.len()).sum()
     }
 
     /// Returns articles filtered by search query, stage, and urgency filters.

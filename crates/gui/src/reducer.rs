@@ -895,6 +895,26 @@ impl AppState {
                 self.filters.selected_article_id = a;
                 Vec::new()
             }
+            AppMessage::SetContactSort(sort) => {
+                self.filters.set_contact_sort(sort);
+                Vec::new()
+            }
+            AppMessage::SetContactSortField(field) => {
+                self.filters.contact_sort.field = field;
+                Vec::new()
+            }
+            AppMessage::SetContactSortDirection(direction) => {
+                self.filters.contact_sort.direction = direction;
+                Vec::new()
+            }
+            AppMessage::ToggleContactSort(field) => {
+                self.filters.toggle_contact_sort(field);
+                Vec::new()
+            }
+            AppMessage::ResetContactSort => {
+                self.filters.reset_contact_sort();
+                Vec::new()
+            }
             AppMessage::ClearFilters => {
                 self.filters.clear();
                 Vec::new()

@@ -6,8 +6,9 @@ use newsjournal_core::ArticleStage;
 use newsjournal_gui::message::AppMessage;
 use newsjournal_gui::state::toast::ToastMessage;
 use newsjournal_gui::views::{
-    build_articles_kanban_view, build_contacts_view, build_modal_view, build_nav_view_models,
-    build_settings_view, build_tasks_kanban_view, build_toast_view,
+    build_articles_kanban_view, build_contacts_directory_view, build_contacts_view,
+    build_modal_view, build_nav_view_models, build_settings_view, build_tasks_kanban_view,
+    build_toast_view,
 };
 use newsjournal_gui::{AppState, EventLoop, NavTab};
 
@@ -100,12 +101,20 @@ fn test_view_models_generation() {
     let contacts_view = build_contacts_view(state);
     assert_eq!(contacts_view.len(), 1);
     assert_eq!(contacts_view[0].name, "Director Martinez");
+    assert_eq!(contacts_view[0].initials, "DM");
     assert_eq!(contacts_view[0].phone_display, "(555) 123-4567");
     assert_eq!(contacts_view[0].linked_articles_count, 1);
     assert_eq!(
         contacts_view[0].linked_article_slugs,
         vec!["subway-expansion"]
     );
+
+    let directory_view = build_contacts_directory_view(state);
+    assert_eq!(directory_view.total_count, 1);
+    assert_eq!(directory_view.filtered_count, 1);
+    assert_eq!(directory_view.total_citations_count, 1);
+    assert_eq!(directory_view.column_headers.len(), 6);
+    assert!(directory_view.empty_state.is_none());
 
     // 5. Settings View Model
     let settings_view = build_settings_view(state);
