@@ -423,6 +423,10 @@ pub struct TaskCardViewModel {
     pub style: TaskCardOverdueStyleViewModel,
     /// True if this card is currently being dragged.
     pub is_dragging: bool,
+    /// Opacity factor for rendering this card (`0.35` when actively being dragged, `1.0` otherwise).
+    pub drag_opacity: f32,
+    /// True if this card is actively hovered.
+    pub is_hovered: bool,
     /// True if this task is overdue relative to the current timestamp.
     pub is_overdue: bool,
     /// True if this task is due soon.
@@ -488,6 +492,8 @@ impl TaskCardViewModel {
             &color,
             is_dark,
         );
+        let drag_opacity = if is_dragging { 0.35 } else { 1.0 };
+        let is_hovered = false;
 
         Self {
             id: task.id,
@@ -508,6 +514,8 @@ impl TaskCardViewModel {
             checkbox,
             style,
             is_dragging,
+            drag_opacity,
+            is_hovered,
             is_overdue,
             is_due_soon,
             is_completed,
