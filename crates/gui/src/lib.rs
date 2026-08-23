@@ -16,6 +16,7 @@ pub use commands::{AppCommand, CommandExecutor};
 pub use message::AppMessage;
 pub use navigation::NavTab;
 pub use platform::cosmic;
+pub use platform::macos;
 pub use runtime::EventLoop;
 pub use state::AppState;
 pub use state::{

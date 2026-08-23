@@ -6,6 +6,4 @@
 //! - **macOS**: `iced` application with `window_vibrancy` liquid glass and native vibrancy effects.
 
 pub mod cosmic;
-
-#[cfg(target_os = "macos")]
 pub mod macos;
