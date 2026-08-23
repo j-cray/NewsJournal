@@ -53,6 +53,10 @@ This document serves as the living roadmap tracking project milestones, current 
 - **Decision**: Provide cross-platform system theme detection (XDG portal/COSMIC and macOS defaults) with WCAG AAA contrast ratio enforcement.
 - **Rationale**: Ensures the application seamlessly mirrors OS dark/light mode transitions while maintaining strict readability for journalists working in high or low light environments.
 
+### ADR 7: Cross-Platform Desktop GUI Runtime with `iced`
+- **Decision**: Integrate `iced` 0.14 application window runtime (`run_app`) into the desktop binary entrypoint `main()`.
+- **Rationale**: Delivers high-performance cross-platform windowing across Wayland (COSMIC), X11, and macOS, directly executing NewsJournal's Elm-inspired state reducers, theme engine, and interactive Kanban/modal interfaces in a 1280x800 desktop window.
+
 ---
 
 ## 📋 Backlog & Upcoming Work
@@ -88,5 +92,6 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Contact Creation & Editing Drawer with live validation and associated stories (Task 8.2).
 - [x] Implement Direct Creation Button ("Add Contact") in top action bar and platform toolbars (Task 8.3).
 - [x] Implement Contact Deletion & Unlink Safety with active story link warnings (Task 8.4).
+- [x] Implement Interactive Desktop GUI Windowing Runtime (`iced` 0.14 / Wayland / macOS).
 
 
