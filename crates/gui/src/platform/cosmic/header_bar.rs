@@ -10,6 +10,12 @@ use crate::platform::cosmic::icon::{COSMIC_APP_ICON_NAME, COSMIC_SYMBOLIC_ICON_N
 pub enum CosmicHeaderBarAction {
     /// Open the "Create Article" modal dialog.
     OpenNewArticleModal,
+    /// Open the "Create Task" modal dialog.
+    OpenNewTaskModal,
+    /// Open the "Create Contact" modal dialog.
+    OpenNewContactModal,
+    /// Trigger primary creation action for active section.
+    PrimaryAction,
     /// Toggle global search filter focus.
     ToggleSearch,
     /// Filter view to focus on overdue articles.

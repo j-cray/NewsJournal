@@ -9,6 +9,12 @@ use crate::navigation::NavTab;
 pub enum MacosToolbarAction {
     /// Open the "Create Article" modal sheet.
     OpenNewArticleModal,
+    /// Open the "Create Task" modal sheet.
+    OpenNewTaskModal,
+    /// Open the "Create Contact" modal sheet.
+    OpenNewContactModal,
+    /// Trigger primary creation action for active section.
+    PrimaryAction,
     /// Toggle global search filter visibility / focus.
     ToggleSearch,
     /// Filter view to focus on overdue articles.
