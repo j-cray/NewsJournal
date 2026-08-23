@@ -23,7 +23,10 @@ pub use state::{
     ArticleDraft, ContactDraft, DragItem, DragState, DropTarget, FilterState, ModalState,
     SettingsDraft, TaskDraft, ToastKind, ToastMessage, UrgencyFilter,
 };
-pub use theme::{AppTheme, ColorTokens, GlassMaterial, ResolvedTheme};
+pub use theme::{
+    AppTheme, ColorTokens, DetectionStrategy, GlassMaterial, ResolvedTheme, SystemThemeDetector,
+    SystemThemeWatcher, ThemeEngine,
+};
 pub use views::*;
 
 /// NewsJournal GUI crate version.
