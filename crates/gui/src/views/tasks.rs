@@ -1,9 +1,7 @@
 //! Tasks Kanban board view models, column metadata, and horizontal 3-column deck layout engine.
 
-use chrono::{DateTime, Utc};
 use newsjournal_core::color::assign_color_for_slug;
-use newsjournal_core::deadline::DeadlineStatus;
-use newsjournal_core::models::{Task, TaskStatus};
+use newsjournal_core::models::TaskStatus;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -344,95 +342,7 @@ impl TasksDeckLayoutConfig {
     }
 }
 
-/// Formatted view model for a single Task card in the Tasks board.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct TaskCardViewModel {
-    /// Unique task ID.
-    pub id: Uuid,
-    /// Parent article ID.
-    pub article_id: Uuid,
-    /// Parent article slug.
-    pub parent_article_slug: String,
-    /// Parent article headline (if available).
-    pub parent_article_headline: Option<String>,
-    /// Parent article color hex.
-    pub parent_article_color: String,
-    /// Task title.
-    pub title: String,
-    /// Task notes snippet.
-    pub notes: String,
-    /// Optional due date.
-    pub due_date: Option<DateTime<Utc>>,
-    /// Formatted due date label (e.g. "Due in 3h", "Overdue (2h)").
-    pub due_date_label: Option<String>,
-    /// Status.
-    pub status: TaskStatus,
-    /// True if this card is currently being dragged.
-    pub is_dragging: bool,
-    /// True if this task is overdue relative to the current timestamp.
-    pub is_overdue: bool,
-    /// True if this task is due soon.
-    pub is_due_soon: bool,
-    /// Overdue / deadline alert label.
-    pub overdue_label: Option<String>,
-    /// Action dispatched when clicking to open edit drawer.
-    pub click_action: AppMessage,
-    /// Action dispatched when toggling task completion checkbox.
-    pub toggle_action: AppMessage,
-}
-
-impl TaskCardViewModel {
-    /// Constructs a `TaskCardViewModel` from a domain task and app state.
-    #[must_use]
-    pub fn build(task: &Task, state: &AppState, is_dragging: bool) -> Self {
-        let parent = state.get_article(task.article_id);
-        let slug = parent
-            .map(|a| a.slug.clone())
-            .unwrap_or_else(|| "unassigned".to_string());
-        let headline = parent.map(|a| a.headline.clone());
-        let color = parent
-            .and_then(|a| a.color.clone())
-            .unwrap_or_else(|| assign_color_for_slug(&slug).to_hex());
-
-        let now = state.last_tick;
-        let is_overdue = task.is_overdue(now);
-        let is_due_soon = task.is_due_soon(now);
-
-        let deadline_status = task.deadline_status(now);
-        let due_date_label = match deadline_status {
-            DeadlineStatus::NoDeadline => None,
-            DeadlineStatus::Completed => None,
-            other => Some(other.badge_text()),
-        };
-
-        let overdue_label = if is_overdue {
-            Some("⚠️ Overdue".to_string())
-        } else if is_due_soon {
-            Some("🕒 Due Soon".to_string())
-        } else {
-            None
-        };
-
-        Self {
-            id: task.id,
-            article_id: task.article_id,
-            parent_article_slug: slug,
-            parent_article_headline: headline,
-            parent_article_color: color,
-            title: task.title.clone(),
-            notes: task.notes.clone().unwrap_or_default(),
-            due_date: task.due_date,
-            due_date_label,
-            status: task.status,
-            is_dragging,
-            is_overdue,
-            is_due_soon,
-            overdue_label,
-            click_action: AppMessage::OpenEditTaskModal(task.id),
-            toggle_action: AppMessage::ToggleTaskStatus(task.id),
-        }
-    }
-}
+pub use crate::views::task_card::TaskCardViewModel;
 
 /// Floating visual drag ghost following cursor during a task drag-and-drop session.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
