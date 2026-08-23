@@ -651,6 +651,7 @@ impl ModalGlassMaterial {
 }
 
 use crate::views::article_form::{build_article_form_view, ArticleFormViewModel};
+use crate::views::contact_form::{build_contact_form_view_with_layout, ContactFormViewModel};
 use crate::views::task_form::{build_task_form_view_with_layout, TaskFormViewModel};
 
 /// Unified presentation descriptor for an active in-app glass modal or slide-over drawer.
@@ -674,6 +675,8 @@ pub struct ModalContainerViewModel {
     pub article_form: Option<ArticleFormViewModel>,
     /// Active task form fields presentation model (when a TaskForm is open).
     pub task_form: Option<TaskFormViewModel>,
+    /// Active contact form fields presentation model (when a ContactForm is open).
+    pub contact_form: Option<ContactFormViewModel>,
     /// Active modal state snapshot.
     pub state: ModalState,
 }
@@ -767,6 +770,13 @@ pub fn build_modal_container_view_with_layout(
         _ => None,
     };
 
+    let contact_form = match &state.modal {
+        ModalState::ContactForm(draft) => {
+            Some(build_contact_form_view_with_layout(state, draft, is_macos))
+        }
+        _ => None,
+    };
+
     ModalContainerViewModel {
         is_open,
         placement,
@@ -777,6 +787,7 @@ pub fn build_modal_container_view_with_layout(
         glass,
         article_form,
         task_form,
+        contact_form,
         state: state.modal.clone(),
     }
 }
@@ -947,5 +958,22 @@ mod tests {
         assert_eq!(open_container.placement, ModalPlacement::SlideOverRight);
         assert_eq!(open_container.header.title, "New Article");
         assert_eq!(open_container.geometry.width, 580.0);
+        assert!(open_container.article_form.is_some());
+        assert!(open_container.task_form.is_none());
+        assert!(open_container.contact_form.is_none());
+
+        // Open contact modal
+        let mut contact_draft = ContactDraft::new();
+        contact_draft.set_name("Agent Cooper");
+        state.modal = ModalState::ContactForm(contact_draft);
+        let contact_container = build_modal_container_view(&state);
+        assert!(contact_container.is_open());
+        assert_eq!(contact_container.placement, ModalPlacement::SlideOverRight);
+        assert_eq!(contact_container.header.title, "New Contact");
+        assert!(contact_container.contact_form.is_some());
+        assert!(contact_container.article_form.is_none());
+        assert!(contact_container.task_form.is_none());
+        let cf = contact_container.contact_form.unwrap();
+        assert_eq!(cf.name_field.value, "Agent Cooper");
     }
 }

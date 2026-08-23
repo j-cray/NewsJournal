@@ -625,6 +625,96 @@ impl ContactDraft {
         }
     }
 
+    /// Updates the contact name and runs live validation.
+    pub fn set_name(&mut self, name: &str) {
+        self.name = name.to_string();
+        if let Err(e) = validate_name(&self.name) {
+            self.validation_errors
+                .insert("name".to_string(), e.to_string());
+        } else {
+            self.validation_errors.remove("name");
+        }
+    }
+
+    /// Updates the organization / outlet field.
+    pub fn set_organization(&mut self, organization: &str) {
+        self.organization = organization.to_string();
+    }
+
+    /// Updates the role / beat field.
+    pub fn set_role(&mut self, role: &str) {
+        self.role = role.to_string();
+    }
+
+    /// Updates the phone number field and runs live validation.
+    pub fn set_phone(&mut self, phone: &str) {
+        self.phone = phone.to_string();
+        let clean = self.phone.trim();
+        if !clean.is_empty() && !is_valid_phone(clean) {
+            self.validation_errors.insert(
+                "phone".to_string(),
+                "Phone number must contain between 7 and 15 digits".to_string(),
+            );
+        } else {
+            self.validation_errors.remove("phone");
+        }
+    }
+
+    /// Updates the email address field and runs live validation.
+    pub fn set_email(&mut self, email: &str) {
+        self.email = email.to_string();
+        let clean = self.email.trim();
+        if !clean.is_empty() && !is_valid_email(clean) {
+            self.validation_errors.insert(
+                "email".to_string(),
+                "Email address is not in a valid format".to_string(),
+            );
+        } else {
+            self.validation_errors.remove("email");
+        }
+    }
+
+    /// Updates the notes field.
+    pub fn set_notes(&mut self, notes: &str) {
+        self.notes = notes.to_string();
+    }
+
+    /// Returns `true` if organization is non-empty.
+    #[must_use]
+    pub fn has_organization(&self) -> bool {
+        !self.organization.trim().is_empty()
+    }
+
+    /// Returns `true` if role is non-empty.
+    #[must_use]
+    pub fn has_role(&self) -> bool {
+        !self.role.trim().is_empty()
+    }
+
+    /// Returns `true` if phone is non-empty.
+    #[must_use]
+    pub fn has_phone(&self) -> bool {
+        !self.phone.trim().is_empty()
+    }
+
+    /// Returns `true` if email is non-empty.
+    #[must_use]
+    pub fn has_email(&self) -> bool {
+        !self.email.trim().is_empty()
+    }
+
+    /// Returns `true` if notes are non-empty.
+    #[must_use]
+    pub fn has_notes(&self) -> bool {
+        !self.notes.trim().is_empty()
+    }
+
+    /// Returns `true` if the draft has valid non-empty name and no validation errors.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.validation_errors.is_empty() && validate_name(&self.name).is_ok()
+    }
+
     /// Validates draft fields and updates `validation_errors`. Returns `true` if valid.
     pub fn validate(&mut self) -> bool {
         self.validation_errors.clear();
@@ -980,5 +1070,76 @@ mod tests {
         draft.set_article_id(None);
         assert!(!draft.is_valid());
         assert!(draft.validation_errors.contains_key("article_id"));
+    }
+
+    #[test]
+    fn test_contact_draft_setters_and_lifecycle() {
+        let mut draft = ContactDraft::new();
+        assert!(!draft.is_valid());
+        assert!(!draft.has_organization());
+        assert!(!draft.has_role());
+        assert!(!draft.has_phone());
+        assert!(!draft.has_email());
+        assert!(!draft.has_notes());
+
+        // Set invalid name
+        draft.set_name("   ");
+        assert!(!draft.is_valid());
+        assert!(draft.validation_errors.contains_key("name"));
+
+        // Set valid name
+        draft.set_name("Dr. Eleanor Vance");
+        assert!(!draft.validation_errors.contains_key("name"));
+        assert!(draft.is_valid());
+
+        // Set organization and role
+        draft.set_organization("Global Tech Institute");
+        draft.set_role("Chief Research Scientist");
+        assert!(draft.has_organization());
+        assert!(draft.has_role());
+
+        // Set invalid email
+        draft.set_email("not-an-email");
+        assert!(!draft.is_valid());
+        assert!(draft.validation_errors.contains_key("email"));
+
+        // Set valid email
+        draft.set_email("eleanor.vance@gti.example.org");
+        assert!(!draft.validation_errors.contains_key("email"));
+        assert!(draft.has_email());
+        assert!(draft.is_valid());
+
+        // Set invalid phone
+        draft.set_phone("123");
+        assert!(!draft.is_valid());
+        assert!(draft.validation_errors.contains_key("phone"));
+
+        // Set valid phone
+        draft.set_phone("+1 (555) 867-5309");
+        assert!(!draft.validation_errors.contains_key("phone"));
+        assert!(draft.has_phone());
+        assert!(draft.is_valid());
+
+        // Set notes
+        draft.set_notes("Available for interviews on Tuesdays and Thursdays.");
+        assert!(draft.has_notes());
+
+        // Convert to contact model
+        let contact = draft.to_contact().expect("valid contact");
+        assert_eq!(contact.name, "Dr. Eleanor Vance");
+        assert_eq!(
+            contact.organization.as_deref(),
+            Some("Global Tech Institute")
+        );
+        assert_eq!(contact.role.as_deref(), Some("Chief Research Scientist"));
+        assert_eq!(
+            contact.email.as_deref(),
+            Some("eleanor.vance@gti.example.org")
+        );
+        assert_eq!(contact.phone.as_deref(), Some("+15558675309"));
+        assert_eq!(
+            contact.notes.as_deref(),
+            Some("Available for interviews on Tuesdays and Thursdays.")
+        );
     }
 }

@@ -3,6 +3,7 @@
 pub mod article_card;
 pub mod article_form;
 pub mod articles;
+pub mod contact_form;
 pub mod contacts;
 pub mod modal;
 pub mod nav;
@@ -11,6 +12,15 @@ pub mod task_card;
 pub mod task_form;
 pub mod tasks;
 pub mod toast;
+
+pub use contact_form::{
+    build_contact_form_view, build_contact_form_view_with_layout,
+    ContactAssociatedArticleItemViewModel, ContactAssociatedArticlesSectionViewModel,
+    ContactEmailFieldViewModel, ContactFormHeaderViewModel, ContactFormViewModel,
+    ContactNameFieldViewModel, ContactNotesFieldViewModel, ContactOrganizationFieldViewModel,
+    ContactPhoneFieldViewModel, ContactRoleFieldViewModel, MAX_CONTACT_NAME_LENGTH,
+    MAX_CONTACT_ORG_LENGTH, MAX_CONTACT_ROLE_LENGTH,
+};
 
 pub use task_form::{
     build_task_form_view, TaskDueDateFieldViewModel, TaskFormHeaderViewModel, TaskFormViewModel,

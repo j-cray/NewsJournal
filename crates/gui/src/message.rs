@@ -118,6 +118,18 @@ pub enum AppMessage {
     ClearTaskDraftDueDate,
     /// Updates the in-progress draft for a contact form.
     UpdateContactDraft(ContactDraft),
+    /// Updates the name field of the active contact draft.
+    UpdateContactDraftName(String),
+    /// Updates the organization / outlet field of the active contact draft.
+    UpdateContactDraftOrg(String),
+    /// Updates the role / beat field of the active contact draft.
+    UpdateContactDraftRole(String),
+    /// Updates the phone number field of the active contact draft.
+    UpdateContactDraftPhone(String),
+    /// Updates the email address field of the active contact draft.
+    UpdateContactDraftEmail(String),
+    /// Updates the notes field of the active contact draft.
+    UpdateContactDraftNotes(String),
     /// Updates the in-progress draft for settings.
     UpdateSettingsDraft(SettingsDraft),
     /// Submits the active modal draft for validation and storage persistence.

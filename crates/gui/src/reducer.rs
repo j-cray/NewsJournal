@@ -453,6 +453,42 @@ impl AppState {
                 self.modal = ModalState::ContactForm(draft);
                 Vec::new()
             }
+            AppMessage::UpdateContactDraftName(name) => {
+                if let ModalState::ContactForm(ref mut draft) = self.modal {
+                    draft.set_name(&name);
+                }
+                Vec::new()
+            }
+            AppMessage::UpdateContactDraftOrg(org) => {
+                if let ModalState::ContactForm(ref mut draft) = self.modal {
+                    draft.set_organization(&org);
+                }
+                Vec::new()
+            }
+            AppMessage::UpdateContactDraftRole(role) => {
+                if let ModalState::ContactForm(ref mut draft) = self.modal {
+                    draft.set_role(&role);
+                }
+                Vec::new()
+            }
+            AppMessage::UpdateContactDraftPhone(phone) => {
+                if let ModalState::ContactForm(ref mut draft) = self.modal {
+                    draft.set_phone(&phone);
+                }
+                Vec::new()
+            }
+            AppMessage::UpdateContactDraftEmail(email) => {
+                if let ModalState::ContactForm(ref mut draft) = self.modal {
+                    draft.set_email(&email);
+                }
+                Vec::new()
+            }
+            AppMessage::UpdateContactDraftNotes(notes) => {
+                if let ModalState::ContactForm(ref mut draft) = self.modal {
+                    draft.set_notes(&notes);
+                }
+                Vec::new()
+            }
             AppMessage::UpdateSettingsDraft(draft) => {
                 self.modal = ModalState::SettingsDrawer(draft);
                 Vec::new()
@@ -552,6 +588,15 @@ impl AppState {
                             match draft.to_contact() {
                                 Ok(contact) => {
                                     let name = contact.name.clone();
+                                    let cid = contact.id;
+                                    if let Some(pos) =
+                                        self.contacts.iter().position(|c| c.id == cid)
+                                    {
+                                        self.contacts[pos] = contact.clone();
+                                    } else {
+                                        self.contacts.push(contact.clone());
+                                    }
+
                                     vec![
                                         AppCommand::SaveContact(contact),
                                         AppCommand::EmitToast(ToastMessage::success(
