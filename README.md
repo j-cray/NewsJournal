@@ -234,6 +234,60 @@ event_loop.dispatch(AppMessage::SetThemeMode(ThemeMode::Light))?;
 assert_eq!(event_loop.state().settings.theme_mode, ThemeMode::Light);
 ```
 
+### 10. Articles Kanban Deck & Dynamic Article Cards
+
+```rust
+use newsjournal_core::models::Article;
+use newsjournal_core::ArticleStage;
+use newsjournal_gui::views::{build_articles_kanban_deck, DeckLayoutConfig};
+use newsjournal_gui::{AppState, EventLoop};
+
+let state = AppState::in_memory()?;
+let mut event_loop = EventLoop::new(state);
+
+// Render horizontal Kanban deck across 6 production stages:
+// Pitching, Researching, Writing, Editing, Ready to Publish, Published
+let deck = build_articles_kanban_deck(event_loop.state());
+assert_eq!(deck.columns.len(), 6);
+println!("Total Stories: {}", deck.total_article_count);
+println!("Overdue Alerts: {}", deck.total_overdue_count);
+```
+
+### 11. Drag-and-Drop Movement Engine
+
+```rust
+use newsjournal_core::models::Article;
+use newsjournal_core::ArticleStage;
+use newsjournal_gui::message::AppMessage;
+use newsjournal_gui::state::drag_drop::{DragItem, DropTarget};
+use newsjournal_gui::views::build_articles_kanban_deck;
+use newsjournal_gui::{AppState, EventLoop};
+
+let state = AppState::in_memory()?;
+let mut event_loop = EventLoop::new(state);
+
+let article = Article::new("clean-energy", "Wind Power Grid Integration");
+let article_id = article.id;
+event_loop.dispatch(AppMessage::CreateArticle(article))?;
+
+// 1. Pick up card with pointer coordinates (triggers dimmed source card & floating drag ghost)
+event_loop.dispatch(AppMessage::DragStartWithPos {
+    item: DragItem::ArticleCard { id: article_id, origin_stage: ArticleStage::Pitching },
+    pos: (150.0, 200.0),
+})?;
+
+let active_deck = build_articles_kanban_deck(event_loop.state());
+assert!(active_deck.is_dragging);
+assert!(active_deck.drag_ghost.is_some());
+
+// 2. Hover over destination column (displays dashed placeholder & emerald green highlight)
+event_loop.dispatch(AppMessage::DragHover(Some(DropTarget::ArticleColumn(ArticleStage::Writing))))?;
+
+// 3. Drop card into target column (persists to SQLite and recalculates deadlines)
+event_loop.dispatch(AppMessage::DragDrop)?;
+assert_eq!(event_loop.state().articles[0].stage, ArticleStage::Writing);
+```
+
 ---
 
 

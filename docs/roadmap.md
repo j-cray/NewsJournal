@@ -73,7 +73,7 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Settings Page with theme mode selection, database info, and persistence (Task 4.2).
 - [x] Implement Articles Kanban Board deck layout with 6 production stage columns and horizontal scrolling (Task 5.1).
 - [x] Implement Article Card Component with color accents, task counter, contact pills, and overdue badges (Task 5.2).
-- [ ] Implement Drag-and-Drop Movement Engine with stage transitions and visual drop targets (Task 5.3).
+- [x] Implement Drag-and-Drop Movement Engine with stage transitions and visual drop targets (Task 5.3).
 - [ ] Implement Column empty states and toolbar creation triggers (Task 5.4).
 
 

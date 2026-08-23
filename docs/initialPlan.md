@@ -90,7 +90,7 @@ Based on the architectural alignment and design interview:
   - Dynamic color-coded indicator bar/badge using the article's assigned color.
   - Display of Slug, Headline, Task completion counter (e.g. `2/5 tasks`), Contact tag pills, and Deadline badge.
   - Overdue visual state: bold red border accent and badge when `is_overdue == true`.
-- [ ] **5.3 Drag-and-Drop Movement Engine**:
+- [x] **5.3 Drag-and-Drop Movement Engine**:
   - Pointer click-and-drag mechanics to drag an article card from one column and drop into another.
   - Visual drag ghost and drop indicator placeholders.
   - Dispatch of stage-change update events to SQLite backend on successful drop.
