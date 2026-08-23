@@ -7,6 +7,7 @@ pub mod contacts;
 pub mod modal;
 pub mod nav;
 pub mod settings;
+pub mod task_card;
 pub mod tasks;
 pub mod toast;
 
@@ -51,14 +52,23 @@ pub use settings::{
     build_settings_view, build_settings_view_with_platform, AppVersionInfo, DatabaseHealthStatus,
     DatabaseStatusViewModel, SettingsViewModel, ThemeOptionViewModel, ThemePreviewColors,
 };
+pub use task_card::{
+    format_task_due_date_badge, format_task_notes_snippet, format_task_title_snippet,
+    TaskAccentStripViewModel, TaskArticleSlugBadgeViewModel, TaskCardOverdueStyleViewModel,
+    TaskCardViewModel, TaskCheckboxViewModel, TaskDueDateBadgeViewModel, TaskNotesPreviewViewModel,
+    DEFAULT_TASK_ACCENT_STRIP_WIDTH, DEFAULT_TASK_CARD_BORDER_WIDTH,
+    DEFAULT_TASK_CARD_CORNER_RADIUS, DUE_SOON_TASK_CARD_BORDER_WIDTH, MAX_TASK_NOTES_SNIPPET_LEN,
+    MAX_TASK_TITLE_SNIPPET_LEN, OVERDUE_TASK_CARD_BORDER_WIDTH, TASK_COMPLETE_BG_TINT_HEX,
+    TASK_COMPLETE_GREEN_HEX, TASK_DUE_SOON_AMBER_HEX, TASK_DUE_SOON_BG_TINT_HEX,
+    TASK_OVERDUE_BG_TINT_HEX, TASK_OVERDUE_RED_HEX,
+};
 pub use tasks::{
     build_tasks_kanban_deck, build_tasks_kanban_deck_with_layout, build_tasks_kanban_view,
-    task_status_metadata, TaskCardViewModel, TaskColumnEmptyStateViewModel,
-    TaskColumnHeaderViewModel, TaskColumnViewModel, TaskDragGhostViewModel,
-    TaskDropPlaceholderViewModel, TaskStatusMetadata, TasksDeckEmptyStateViewModel,
-    TasksDeckLayoutConfig, TasksKanbanDeckViewModel, TasksToolbarViewModel,
-    DEFAULT_TASK_COLUMN_GAP, DEFAULT_TASK_COLUMN_WIDTH, DEFAULT_TASK_DECK_PADDING,
-    MAX_TASK_COLUMN_WIDTH, MIN_TASK_COLUMN_WIDTH, NUM_TASK_STATUSES, TASK_ACCENT_STRIP_WIDTH,
-    TASK_COMPLETE_GREEN_HEX, TASK_DUE_SOON_AMBER_HEX, TASK_OVERDUE_RED_HEX,
+    task_status_metadata, TaskColumnEmptyStateViewModel, TaskColumnHeaderViewModel,
+    TaskColumnViewModel, TaskDragGhostViewModel, TaskDropPlaceholderViewModel, TaskStatusMetadata,
+    TasksDeckEmptyStateViewModel, TasksDeckLayoutConfig, TasksKanbanDeckViewModel,
+    TasksToolbarViewModel, DEFAULT_TASK_COLUMN_GAP, DEFAULT_TASK_COLUMN_WIDTH,
+    DEFAULT_TASK_DECK_PADDING, MAX_TASK_COLUMN_WIDTH, MIN_TASK_COLUMN_WIDTH, NUM_TASK_STATUSES,
+    TASK_ACCENT_STRIP_WIDTH,
 };
 pub use toast::{build_toast_view, ToastContainerViewModel};
