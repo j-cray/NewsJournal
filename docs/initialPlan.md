@@ -86,7 +86,7 @@ Based on the architectural alignment and design interview:
   4. Editing
   5. Ready to Publish
   6. Published
-- [ ] **5.2 Article Card Component**:
+- [x] **5.2 Article Card Component**:
   - Dynamic color-coded indicator bar/badge using the article's assigned color.
   - Display of Slug, Headline, Task completion counter (e.g. `2/5 tasks`), Contact tag pills, and Deadline badge.
   - Overdue visual state: bold red border accent and badge when `is_overdue == true`.
