@@ -34,6 +34,10 @@ NewsJournal is a pure Rust desktop application targeting Linux and macOS designe
   - Integration tests for public APIs, subsystem interactions, and end-to-end workflows.
   - Boundary, negative, and edge-case testing (e.g., empty inputs, invalid formats, overflow limits, concurrency conditions).
   - Doc tests for public API examples to ensure documentation never becomes stale.
+- **Implement tasks from `docs/initialPlan.md`**:
+  - Follow the plan sequentially and commit each task to its own branch. Avoid committing directly to main whenever possible.
+  - Update `docs/initialPlan.md` and `docs/roadmap.md` after completing each task.
+  - Implement only the current task and do not jump ahead.
 
 ---
 
