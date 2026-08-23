@@ -121,7 +121,7 @@ Based on the architectural alignment and design interview:
   - Left accent color strip matching the parent article's color.
   - Parent article slug badge/pill.
   - Task title, optional due date badge, and notes preview.
-- [ ] **7.3 Task Drag-and-Drop Engine**: Mouse click-and-drag interaction to transition tasks between `To-Do`, `In Progress`, and `Complete`.
+- [x] **7.3 Task Drag-and-Drop Engine**: Mouse click-and-drag interaction to transition tasks between `To-Do`, `In Progress`, and `Complete`.
 - [ ] **7.4 Task Creation & Editing Drawer**:
   - "New Task" button on the Tasks page with a parent article dropdown selector.
   - Click task card to open task detail/edit drawer.

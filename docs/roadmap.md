@@ -82,5 +82,6 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Save & Cancel actions with keyboard shortcuts and validation tooltips (Task 6.5).
 - [x] Implement Tasks Kanban Deck Layout (3-column workflow board: To-Do, In Progress, Complete) (Task 7.1).
 - [x] Implement Task Card Component with accent strips, slug badges, due dates, notes previews, and overdue cues (Task 7.2).
+- [x] Implement Task Drag-and-Drop Movement Engine across To-Do, In Progress, and Complete columns (Task 7.3).
 
 
