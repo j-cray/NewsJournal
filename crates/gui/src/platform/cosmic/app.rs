@@ -191,6 +191,26 @@ impl CosmicApp {
             CosmicHeaderBarAction::OpenNewArticleModal => {
                 self.dispatch(AppMessage::OpenNewArticleModal)?;
             }
+            CosmicHeaderBarAction::OpenNewTaskModal => {
+                self.dispatch(AppMessage::OpenNewTaskModal(None))?;
+            }
+            CosmicHeaderBarAction::OpenNewContactModal => {
+                self.dispatch(AppMessage::OpenNewContactModal)?;
+            }
+            CosmicHeaderBarAction::PrimaryAction => match self.state().active_tab {
+                NavTab::ArticlesKanban => {
+                    self.dispatch(AppMessage::OpenNewArticleModal)?;
+                }
+                NavTab::TasksKanban => {
+                    self.dispatch(AppMessage::OpenNewTaskModal(None))?;
+                }
+                NavTab::ContactsDirectory => {
+                    self.dispatch(AppMessage::OpenNewContactModal)?;
+                }
+                NavTab::Settings => {
+                    self.dispatch(AppMessage::SaveSettings(self.state().settings.clone()))?;
+                }
+            },
             CosmicHeaderBarAction::ToggleSearch => {
                 self.header_bar.is_search_active = !self.header_bar.is_search_active;
             }

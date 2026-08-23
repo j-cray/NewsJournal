@@ -192,6 +192,26 @@ impl MacosApp {
             MacosToolbarAction::OpenNewArticleModal => {
                 self.dispatch(AppMessage::OpenNewArticleModal)?;
             }
+            MacosToolbarAction::OpenNewTaskModal => {
+                self.dispatch(AppMessage::OpenNewTaskModal(None))?;
+            }
+            MacosToolbarAction::OpenNewContactModal => {
+                self.dispatch(AppMessage::OpenNewContactModal)?;
+            }
+            MacosToolbarAction::PrimaryAction => match self.state().active_tab {
+                NavTab::ArticlesKanban => {
+                    self.dispatch(AppMessage::OpenNewArticleModal)?;
+                }
+                NavTab::TasksKanban => {
+                    self.dispatch(AppMessage::OpenNewTaskModal(None))?;
+                }
+                NavTab::ContactsDirectory => {
+                    self.dispatch(AppMessage::OpenNewContactModal)?;
+                }
+                NavTab::Settings => {
+                    self.dispatch(AppMessage::SaveSettings(self.state().settings.clone()))?;
+                }
+            },
             MacosToolbarAction::ToggleSearch => {
                 self.toolbar.is_search_active = !self.toolbar.is_search_active;
             }

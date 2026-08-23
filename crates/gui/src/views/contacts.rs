@@ -340,6 +340,12 @@ pub struct ContactsToolbarViewModel {
     pub primary_action_tooltip: &'static str,
     /// Primary action shortcut display (e.g. "⌘⇧C" or "Ctrl+Shift+C").
     pub primary_action_shortcut: &'static str,
+    /// Primary action symbolic icon name.
+    pub primary_action_icon_name: &'static str,
+    /// Primary action macOS SF Symbol identifier.
+    pub primary_action_sf_symbol: &'static str,
+    /// Primary action fallback emoji icon.
+    pub primary_action_icon_emoji: &'static str,
     /// Message dispatched when clicking the primary action button.
     pub primary_action_message: AppMessage,
     /// Message dispatched to clear search query.
@@ -368,6 +374,16 @@ impl ContactsToolbarViewModel {
             0 => "0 story citations".to_string(),
             1 => "1 story citation".to_string(),
             n => format!("{n} story citations"),
+        }
+    }
+
+    /// Returns the platform-appropriate keyboard shortcut display string for the Add Contact action.
+    #[must_use]
+    pub const fn primary_action_shortcut_for_platform(is_macos: bool) -> &'static str {
+        if is_macos {
+            "⌘⇧C"
+        } else {
+            "Ctrl+Shift+C"
         }
     }
 
@@ -412,6 +428,9 @@ impl ContactsToolbarViewModel {
             primary_action_label: "+ Add Contact",
             primary_action_tooltip: "Create a new contact record (⌘⇧C / Ctrl+Shift+C)",
             primary_action_shortcut: "⌘⇧C",
+            primary_action_icon_name: "user-plus",
+            primary_action_sf_symbol: "person.badge.plus",
+            primary_action_icon_emoji: "➕",
             primary_action_message: AppMessage::OpenNewContactModal,
             clear_search_message: AppMessage::SetSearchQuery(String::new()),
             clear_all_filters_message: AppMessage::ClearFilters,
