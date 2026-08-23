@@ -107,7 +107,7 @@ Based on the architectural alignment and design interview:
 - [x] **6.3 Contact Tagging Sub-Section**:
   - Searchable multi-select pill selector for existing contacts.
   - Inline "Create Contact" shortcut directly from the article form.
-- [ ] **6.4 Inline Task Management Sub-Section**:
+- [x] **6.4 Inline Task Management Sub-Section**:
   - Checklist of existing tasks for this article with status checkboxes.
   - Quick-add input field to add new tasks directly to the article.
 - [ ] **6.5 Save & Cancel Actions**: Keyboard shortcuts (`Escape` to close, `Ctrl+S`/`Cmd+S` to save) and error validation tooltips.

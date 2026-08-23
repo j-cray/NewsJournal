@@ -78,7 +78,7 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Glass Modal / Drawer Container with centered & slide-over layouts and backdrop blur (Task 6.1).
 - [x] Implement Article Form Fields with slug collisions, stage dropdown, and deadline picker (Task 6.2).
 - [x] Implement Contact Tagging Sub-Section in article drawer (Task 6.3).
-- [ ] Implement Inline Task Management Sub-Section in article drawer (Task 6.4).
+- [x] Implement Inline Task Management Sub-Section in article drawer (Task 6.4).
 - [ ] Implement Save & Cancel actions with keyboard shortcuts and validation tooltips (Task 6.5).
 
 
