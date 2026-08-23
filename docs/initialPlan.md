@@ -63,7 +63,7 @@ Based on the architectural alignment and design interview:
 - [x] **3.3 macOS Liquid Glass Implementation (`#[cfg(target_os = "macos")]`)**:
   - Integrate `iced` with `window_vibrancy` for macOS native window blur (`NSVisualEffectView`).
   - Implement custom iced container styles mimicking liquid glass with backdrop translucency and subtle border highlights.
-- [ ] **3.4 Theme Engine Integration**: Connect GUI to system theme detector, handling dynamic switching between `System`, `Light`, and `Dark`.
+- [x] **3.4 Theme Engine Integration**: Connect GUI to system theme detector, handling dynamic switching between `System`, `Light`, and `Dark`.
 
 ### Phase 4: Left Vertical Navigation Bar & Settings View
 - [ ] **4.1 Left Navigation Bar Component**:

@@ -16,7 +16,7 @@ This document serves as the living roadmap tracking project milestones, current 
 | :--- | :--- | :--- | :--- |
 | **Phase 1** | Workspace Setup & Core Domain Models (`newsjournal-core`) | ✅ Complete | All |
 | **Phase 2** | SQLite Persistence Engine & Migrations | ✅ Complete | All |
-| **Phase 3** | GUI Scaffolding & Cross-Platform Glass Architecture | 🟡 In Progress | Linux & macOS |
+| **Phase 3** | GUI Scaffolding & Cross-Platform Glass Architecture | ✅ Complete | Linux & macOS |
 | **Phase 4** | Vertical Left Navigation Bar & Settings / Theme Engine | ⏳ In Planning | Linux & macOS |
 | **Phase 5** | Articles Kanban Board (6 Production Stages) & Drag-and-Drop | ⏳ In Planning | Linux & macOS |
 | **Phase 6** | Article Creation & Edit Glass Modal / Drawer | ⏳ In Planning | Linux & macOS |
@@ -49,6 +49,10 @@ This document serves as the living roadmap tracking project milestones, current 
 - **Decision**: Display creation and editing forms for articles, tasks, and contacts in layered frosted/liquid glass modal overlays instead of separate native OS windows.
 - **Rationale**: Prevents window management clutter on tiling and floating window managers alike and keeps the user focused on the active story.
 
+### ADR 6: Dynamic System Appearance Detection & Contrast Enforcement
+- **Decision**: Provide cross-platform system theme detection (XDG portal/COSMIC and macOS defaults) with WCAG AAA contrast ratio enforcement.
+- **Rationale**: Ensures the application seamlessly mirrors OS dark/light mode transitions while maintaining strict readability for journalists working in high or low light environments.
+
 ---
 
 ## 📋 Backlog & Upcoming Work
@@ -64,6 +68,6 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement `newsjournal-gui` scaffolding with shared `AppState`, `AppMessage`, reducer, and event loop (Task 3.1).
 - [x] Implement Linux COSMIC desktop wrapper, frosted glass materials, header bar, and window sizing (Task 3.2).
 - [x] Implement macOS Liquid Glass integration with `iced` + `window_vibrancy` (Task 3.3).
-- [ ] Implement theme engine integration with dynamic System/Light/Dark switching (Task 3.4).
+- [x] Implement theme engine integration with dynamic System/Light/Dark switching (Task 3.4).
 
 

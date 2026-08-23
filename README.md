@@ -171,6 +171,24 @@ println!("macOS Window Title: {}", view_tree.window_title);
 println!("macOS Toolbar: {}", view_tree.toolbar.display_title());
 ```
 
+### 7. Dynamic Theme Engine & System Appearance Detection
+
+```rust
+use newsjournal_core::models::ThemeMode;
+use newsjournal_gui::theme::{SystemThemeDetector, ThemeEngine, ResolvedTheme};
+
+// Initialize theme engine matching operating system appearance
+let detector = SystemThemeDetector::new();
+let mut engine = ThemeEngine::with_detector(ThemeMode::System, &detector);
+
+println!("Resolved theme: {:?}", engine.resolved()); // ResolvedTheme::Dark or Light
+println!("Text contrast ratio: {:.2}:1", engine.text_contrast_ratio()); // Meets WCAG AAA (>= 7.0:1)
+
+// Toggle theme or override
+engine.set_mode(ThemeMode::Light);
+assert_eq!(engine.resolved(), ResolvedTheme::Light);
+```
+
 ---
 
 
