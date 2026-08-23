@@ -1,8 +1,8 @@
 //! Pure state transition reducer for the NewsJournal GUI.
 
 use chrono::Utc;
-use newsjournal_core::color::assign_color_for_slug;
 use newsjournal_core::models::TaskStatus;
+use uuid::Uuid;
 
 use crate::commands::AppCommand;
 use crate::message::AppMessage;
@@ -47,17 +47,12 @@ impl AppState {
             // Modal & Drawer Lifecycle
             // ==========================================
             AppMessage::OpenNewArticleModal => {
-                let mut draft = ArticleDraft::new();
-                let default_color = assign_color_for_slug("new-article");
-                draft.color_hex = default_color.to_hex();
+                let draft = ArticleDraft::new();
                 self.modal = ModalState::ArticleForm(draft);
                 Vec::new()
             }
             AppMessage::OpenNewArticleInStageModal(stage) => {
-                let mut draft = ArticleDraft::new();
-                draft.stage = stage;
-                let default_color = assign_color_for_slug("new-article");
-                draft.color_hex = default_color.to_hex();
+                let draft = ArticleDraft::new_with_stage(stage);
                 self.modal = ModalState::ArticleForm(draft);
                 Vec::new()
             }
@@ -129,8 +124,84 @@ impl AppState {
                 self.modal.close();
                 Vec::new()
             }
-            AppMessage::UpdateArticleDraft(draft) => {
+            AppMessage::UpdateArticleDraft(mut draft) => {
+                let existing_slugs: Vec<(Uuid, String)> = self
+                    .articles
+                    .iter()
+                    .map(|a| (a.id, a.slug.clone()))
+                    .collect();
+                draft.validate_with_existing_slugs(&existing_slugs);
                 self.modal = ModalState::ArticleForm(draft);
+                Vec::new()
+            }
+            AppMessage::UpdateArticleSlug(slug) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.set_slug(&slug);
+                    let existing_slugs: Vec<(Uuid, String)> = self
+                        .articles
+                        .iter()
+                        .map(|a| (a.id, a.slug.clone()))
+                        .collect();
+                    draft.validate_with_existing_slugs(&existing_slugs);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::UpdateArticleHeadline(headline) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.set_headline(&headline, true);
+                    let existing_slugs: Vec<(Uuid, String)> = self
+                        .articles
+                        .iter()
+                        .map(|a| (a.id, a.slug.clone()))
+                        .collect();
+                    draft.validate_with_existing_slugs(&existing_slugs);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::UpdateArticleDescription(description) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.set_description(&description);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::SetArticleDraftStage(stage) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.set_stage(stage);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::SetArticleDraftDeadline(deadline) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.set_deadline(deadline);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::SetArticleDraftDeadlinePreset(preset) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    let now = Utc::now();
+                    draft.set_deadline(preset.calculate_target_datetime(now));
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::SetArticleDraftColor(color_hex) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.set_color(&color_hex);
+                    draft.validate();
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::ResetArticleDraftColorToSlug => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.reset_color_to_hash();
+                    self.modal = ModalState::ArticleForm(draft);
+                }
                 Vec::new()
             }
             AppMessage::UpdateTaskDraft(draft) => {
@@ -149,7 +220,12 @@ impl AppState {
                 let current_modal = std::mem::take(&mut self.modal);
                 match current_modal {
                     ModalState::ArticleForm(mut draft) => {
-                        if draft.validate() {
+                        let existing_slugs: Vec<(Uuid, String)> = self
+                            .articles
+                            .iter()
+                            .map(|a| (a.id, a.slug.clone()))
+                            .collect();
+                        if draft.validate_with_existing_slugs(&existing_slugs) {
                             match draft.to_article() {
                                 Ok(article) => {
                                     let tagged = draft.tagged_contact_ids.clone();

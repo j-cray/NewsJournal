@@ -13,6 +13,9 @@ use newsjournal_core::validation::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use newsjournal_core::color::assign_color_for_slug;
+use newsjournal_core::validation::slugify;
+
 /// Draft form state for creating or editing an Article.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct ArticleDraft {
@@ -30,6 +33,8 @@ pub struct ArticleDraft {
     pub deadline: Option<DateTime<Utc>>,
     /// Custom or assigned hex color.
     pub color_hex: String,
+    /// Whether the color is a user-chosen custom override instead of auto-hash assigned.
+    pub is_custom_color: bool,
     /// IDs of contacts linked to this article.
     pub tagged_contact_ids: Vec<Uuid>,
     /// Validation error messages keyed by field name.
@@ -37,15 +42,33 @@ pub struct ArticleDraft {
 }
 
 impl ArticleDraft {
-    /// Creates a fresh draft for a new article.
+    /// Creates a fresh draft for a new article with default color.
     #[must_use]
     pub fn new() -> Self {
-        Self::default()
+        let default_color = assign_color_for_slug("new-article").to_hex();
+        Self {
+            color_hex: default_color,
+            ..Default::default()
+        }
+    }
+
+    /// Creates a fresh draft initialized with a specific production stage.
+    #[must_use]
+    pub fn new_with_stage(stage: ArticleStage) -> Self {
+        let mut draft = Self::new();
+        draft.stage = stage;
+        draft
     }
 
     /// Initializes a draft populated with an existing article's data and tagged contacts.
     #[must_use]
     pub fn from_article(article: &Article, tagged_contact_ids: Vec<Uuid>) -> Self {
+        let is_custom_color = article.color.is_some();
+        let color_hex = article
+            .color
+            .clone()
+            .unwrap_or_else(|| assign_color_for_slug(&article.slug).to_hex());
+
         Self {
             id: Some(article.id),
             slug: article.slug.clone(),
@@ -53,10 +76,119 @@ impl ArticleDraft {
             description: article.description.clone().unwrap_or_default(),
             stage: article.stage,
             deadline: article.deadline,
-            color_hex: article.color.clone().unwrap_or_default(),
+            color_hex,
+            is_custom_color,
             tagged_contact_ids,
             validation_errors: HashMap::new(),
         }
+    }
+
+    /// Updates the slug field and synchronizes the color if not custom-overridden.
+    pub fn set_slug(&mut self, slug: &str) {
+        self.slug = slug.to_string();
+        let clean = self.slug.trim();
+        if clean.is_empty() {
+            self.validation_errors
+                .insert("slug".to_string(), "Slug cannot be empty".to_string());
+        } else if !is_valid_slug(clean) {
+            self.validation_errors.insert(
+                "slug".to_string(),
+                "Slug must contain only lowercase letters, digits, and hyphens (no spaces or double hyphens)".to_string(),
+            );
+        } else {
+            self.validation_errors.remove("slug");
+        }
+
+        if !self.is_custom_color {
+            let key = if clean.is_empty() {
+                "new-article"
+            } else {
+                clean
+            };
+            self.color_hex = assign_color_for_slug(key).to_hex();
+        }
+    }
+
+    /// Updates the headline field, optionally auto-generating the slug for new articles.
+    pub fn set_headline(&mut self, headline: &str, auto_slug: bool) {
+        let old_auto_slug = slugify(&self.headline);
+        let should_auto_slug = auto_slug
+            && self.id.is_none()
+            && (self.slug.is_empty() || self.slug == old_auto_slug || self.slug == "new-article");
+
+        self.headline = headline.to_string();
+        if let Err(e) = validate_headline(&self.headline) {
+            self.validation_errors
+                .insert("headline".to_string(), e.to_string());
+        } else {
+            self.validation_errors.remove("headline");
+        }
+
+        if should_auto_slug {
+            self.set_slug(&slugify(headline));
+        }
+    }
+
+    /// Updates the story description / background notes.
+    pub fn set_description(&mut self, description: &str) {
+        self.description = description.to_string();
+    }
+
+    /// Updates the production stage.
+    pub fn set_stage(&mut self, stage: ArticleStage) {
+        self.stage = stage;
+    }
+
+    /// Updates the deadline timestamp.
+    pub fn set_deadline(&mut self, deadline: Option<DateTime<Utc>>) {
+        self.deadline = deadline;
+    }
+
+    /// Sets an explicit custom color override.
+    pub fn set_color(&mut self, color_hex: &str) {
+        self.color_hex = color_hex.trim().to_string();
+        self.is_custom_color = true;
+
+        let clean = self.color_hex.trim();
+        if !clean.is_empty() && !is_valid_hex_color(clean) {
+            self.validation_errors.insert(
+                "color_hex".to_string(),
+                "Color must be a valid #RRGGBB hex code".to_string(),
+            );
+        } else {
+            self.validation_errors.remove("color_hex");
+        }
+    }
+
+    /// Resets the color to the deterministic hash-based palette color derived from the slug.
+    pub fn reset_color_to_hash(&mut self) {
+        self.is_custom_color = false;
+        self.validation_errors.remove("color_hex");
+        let clean = self.slug.trim();
+        let key = if clean.is_empty() {
+            "new-article"
+        } else {
+            clean
+        };
+        self.color_hex = assign_color_for_slug(key).to_hex();
+    }
+
+    /// Checks whether the current slug collides with any existing articles (excluding this article's ID).
+    #[must_use]
+    pub fn slug_collides_with(&self, existing_articles: &[(Uuid, String)]) -> bool {
+        let clean_slug = self.slug.trim();
+        if clean_slug.is_empty() {
+            return false;
+        }
+        existing_articles
+            .iter()
+            .any(|(id, slug)| slug.trim().eq_ignore_ascii_case(clean_slug) && Some(*id) != self.id)
+    }
+
+    /// Returns `true` if there are currently no validation errors.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.validation_errors.is_empty()
     }
 
     /// Validates all draft fields and updates `validation_errors`. Returns `true` if valid.
@@ -70,7 +202,7 @@ impl ArticleDraft {
         } else if !is_valid_slug(clean_slug) {
             self.validation_errors.insert(
                 "slug".to_string(),
-                "Slug must contain only lowercase letters, digits, and hyphens".to_string(),
+                "Slug must contain only lowercase letters, digits, and hyphens (no spaces or double hyphens)".to_string(),
             );
         }
 
@@ -88,6 +220,21 @@ impl ArticleDraft {
         }
 
         self.validation_errors.is_empty()
+    }
+
+    /// Validates draft fields AND performs a live uniqueness check against existing articles.
+    pub fn validate_with_existing_slugs(&mut self, existing_articles: &[(Uuid, String)]) -> bool {
+        let format_valid = self.validate();
+
+        if self.slug_collides_with(existing_articles) {
+            self.validation_errors.insert(
+                "slug".to_string(),
+                "Slug is already in use by another story".to_string(),
+            );
+            return false;
+        }
+
+        format_valid && !self.validation_errors.contains_key("slug")
     }
 
     /// Converts this draft into a domain [`Article`] model if valid.
@@ -505,5 +652,58 @@ mod tests {
 
         modal.close();
         assert!(!modal.is_open());
+    }
+
+    #[test]
+    fn test_article_draft_setters_and_collision_checks() {
+        let mut draft = ArticleDraft::new();
+        assert!(!draft.is_custom_color);
+
+        // Auto-slug from headline
+        draft.set_headline(
+            "Investigation: Port Security Vulnerabilities Exposed!",
+            true,
+        );
+        assert_eq!(
+            draft.slug,
+            "investigation-port-security-vulnerabilities-exposed"
+        );
+        assert!(!draft.color_hex.is_empty());
+        assert!(!draft.is_custom_color);
+
+        // Custom color override
+        let initial_color = draft.color_hex.clone();
+        assert!(!initial_color.is_empty());
+        draft.set_color("#E53935");
+        assert!(draft.is_custom_color);
+        assert_eq!(draft.color_hex, "#E53935");
+
+        // Slug change does not overwrite custom color
+        draft.set_slug("port-security-audit");
+        assert_eq!(draft.color_hex, "#E53935");
+
+        // Reset to slug hash
+        draft.reset_color_to_hash();
+        assert!(!draft.is_custom_color);
+        assert_ne!(draft.color_hex, "#E53935");
+
+        // Collision checking
+        let existing = vec![
+            (Uuid::new_v4(), "transit-strike".to_string()),
+            (Uuid::new_v4(), "port-security-audit".to_string()),
+        ];
+        assert!(draft.slug_collides_with(&existing));
+
+        let valid = draft.validate_with_existing_slugs(&existing);
+        assert!(!valid);
+        assert_eq!(
+            draft.validation_errors.get("slug").map(String::as_str),
+            Some("Slug is already in use by another story")
+        );
+
+        // Non-colliding slug
+        draft.set_slug("port-security-follow-up");
+        assert!(!draft.slug_collides_with(&existing));
+        assert!(draft.validate_with_existing_slugs(&existing));
     }
 }

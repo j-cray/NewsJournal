@@ -1,6 +1,7 @@
 //! View models and UI presentation descriptors for NewsJournal.
 
 pub mod article_card;
+pub mod article_form;
 pub mod articles;
 pub mod contacts;
 pub mod modal;
@@ -8,6 +9,13 @@ pub mod nav;
 pub mod settings;
 pub mod tasks;
 pub mod toast;
+
+pub use article_form::{
+    build_article_form_view, ArticleColorPickerViewModel, ArticleDeadlineFieldViewModel,
+    ArticleDescriptionFieldViewModel, ArticleFormViewModel, ArticleHeadlineFieldViewModel,
+    ArticleSlugFieldViewModel, ArticleStageFieldViewModel, ColorSwatchViewModel, DeadlinePreset,
+    DeadlinePresetViewModel, StageOptionViewModel, DEFAULT_DEADLINE_HOUR, MAX_HEADLINE_LENGTH,
+};
 
 pub use article_card::{
     calculate_contrast_color, format_contact_initials, format_deadline_badge,

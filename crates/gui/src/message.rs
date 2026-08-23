@@ -12,6 +12,7 @@ use crate::state::drag_drop::{DragItem, DropTarget};
 use crate::state::filters::UrgencyFilter;
 use crate::state::modal::{ArticleDraft, ContactDraft, SettingsDraft, TaskDraft};
 use crate::state::toast::ToastMessage;
+use crate::views::DeadlinePreset;
 
 /// Exhaustive event and action messages processed by the application reducer.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -57,6 +58,22 @@ pub enum AppMessage {
     CloseModal,
     /// Updates the in-progress draft for an article form.
     UpdateArticleDraft(ArticleDraft),
+    /// Updates the slug field of the active article draft with live collision checks.
+    UpdateArticleSlug(String),
+    /// Updates the headline field of the active article draft.
+    UpdateArticleHeadline(String),
+    /// Updates the description / background notes field of the active article draft.
+    UpdateArticleDescription(String),
+    /// Updates the editorial stage of the active article draft.
+    SetArticleDraftStage(ArticleStage),
+    /// Updates the deadline timestamp of the active article draft.
+    SetArticleDraftDeadline(Option<DateTime<Utc>>),
+    /// Applies a quick deadline preset to the active article draft.
+    SetArticleDraftDeadlinePreset(DeadlinePreset),
+    /// Updates the custom hex color of the active article draft.
+    SetArticleDraftColor(String),
+    /// Resets the color of the active article draft to the slug-derived hash color.
+    ResetArticleDraftColorToSlug,
     /// Updates the in-progress draft for a task form.
     UpdateTaskDraft(TaskDraft),
     /// Updates the in-progress draft for a contact form.

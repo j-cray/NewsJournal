@@ -537,6 +537,8 @@ impl ModalGlassMaterial {
     }
 }
 
+use crate::views::article_form::{build_article_form_view, ArticleFormViewModel};
+
 /// Unified presentation descriptor for an active in-app glass modal or slide-over drawer.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ModalContainerViewModel {
@@ -554,6 +556,8 @@ pub struct ModalContainerViewModel {
     pub footer: ModalFooterViewModel,
     /// Glass material styling properties.
     pub glass: ModalGlassMaterial,
+    /// Active article form fields presentation model (when an ArticleForm is open).
+    pub article_form: Option<ArticleFormViewModel>,
     /// Active modal state snapshot.
     pub state: ModalState,
 }
@@ -635,6 +639,11 @@ pub fn build_modal_container_view_with_layout(
         ModalGlassMaterial::cosmic(is_dark)
     };
 
+    let article_form = match &state.modal {
+        ModalState::ArticleForm(draft) => Some(build_article_form_view(state, draft)),
+        _ => None,
+    };
+
     ModalContainerViewModel {
         is_open,
         placement,
@@ -643,6 +652,7 @@ pub fn build_modal_container_view_with_layout(
         header,
         footer,
         glass,
+        article_form,
         state: state.modal.clone(),
     }
 }
