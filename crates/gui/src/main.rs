@@ -3,7 +3,9 @@
 use newsjournal_core::storage::StorageService;
 #[cfg(target_os = "linux")]
 use newsjournal_gui::cosmic::{CosmicApp, CosmicAppConfig};
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "macos")]
+use newsjournal_gui::macos::{MacosApp, MacosAppConfig};
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
 use newsjournal_gui::EventLoop;
 use newsjournal_gui::{AppState, VERSION};
 
@@ -43,7 +45,24 @@ fn main() {
         );
     }
 
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "macos")]
+    {
+        let macos_app = MacosApp::with_config(state, MacosAppConfig::default());
+        println!(
+            "NewsJournal macOS Liquid Glass wrapper initialized (Window: {}x{}, Vibrancy: {:?}).",
+            macos_app.config.window.placement.width,
+            macos_app.config.window.placement.height,
+            macos_app.config.vibrancy.material
+        );
+        println!(
+            "Loaded {} articles, {} tasks, {} contacts.",
+            macos_app.state().articles.len(),
+            macos_app.state().tasks.len(),
+            macos_app.state().contacts.len()
+        );
+    }
+
+    #[cfg(not(any(target_os = "linux", target_os = "macos")))]
     {
         let event_loop = EventLoop::new(state);
         println!(
@@ -75,7 +94,14 @@ mod tests {
             );
         }
 
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(target_os = "macos")]
+        {
+            let macos_app = MacosApp::new(state);
+            assert_eq!(macos_app.state().articles.len(), 0);
+            assert_eq!(macos_app.toolbar.app_title, "NewsJournal");
+        }
+
+        #[cfg(not(any(target_os = "linux", target_os = "macos")))]
         {
             let event_loop = EventLoop::new(state);
             assert_eq!(event_loop.state().articles.len(), 0);
