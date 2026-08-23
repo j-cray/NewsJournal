@@ -76,7 +76,7 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Drag-and-Drop Movement Engine with stage transitions and visual drop targets (Task 5.3).
 - [x] Implement Column empty states, card count badges, deck toolbar, and creation triggers (Task 5.4).
 - [x] Implement Glass Modal / Drawer Container with centered & slide-over layouts and backdrop blur (Task 6.1).
-- [ ] Implement Article Form Fields with slug collisions, stage dropdown, and deadline picker (Task 6.2).
+- [x] Implement Article Form Fields with slug collisions, stage dropdown, and deadline picker (Task 6.2).
 - [ ] Implement Contact Tagging Sub-Section in article drawer (Task 6.3).
 - [ ] Implement Inline Task Management Sub-Section in article drawer (Task 6.4).
 - [ ] Implement Save & Cancel actions with keyboard shortcuts and validation tooltips (Task 6.5).

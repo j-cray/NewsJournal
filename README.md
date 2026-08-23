@@ -321,6 +321,44 @@ assert!(empty_state.is_drop_target_hint);
 event_loop.dispatch(AppMessage::OpenNewArticleInStageModal(ArticleStage::Writing))?;
 ```
 
+### 13. In-App Glass Modal & Article Form Fields
+
+```rust
+use newsjournal_core::models::ArticleStage;
+use newsjournal_gui::message::AppMessage;
+use newsjournal_gui::views::{build_modal_container_view, DeadlinePreset};
+use newsjournal_gui::{AppState, EventLoop};
+
+let state = AppState::in_memory()?;
+let mut event_loop = EventLoop::new(state);
+
+// 1. Open article form modal (in slide-over right drawer)
+event_loop.dispatch(AppMessage::OpenNewArticleModal)?;
+
+// 2. Populate headline -> automatically slugifies and derives color hash
+event_loop.dispatch(AppMessage::UpdateArticleHeadline(
+    "Port Security Audit Reveals Critical Supply Deficits".to_string(),
+))?;
+
+// 3. Set editorial stage and apply quick deadline preset
+event_loop.dispatch(AppMessage::SetArticleDraftStage(ArticleStage::Researching))?;
+event_loop.dispatch(AppMessage::SetArticleDraftDeadlinePreset(DeadlinePreset::Tomorrow5PM))?;
+
+// 4. Select curated accessible color swatch (or custom override)
+event_loop.dispatch(AppMessage::SetArticleDraftColor("#059669".to_string()))?; // Emerald
+
+// 5. Inspect comprehensive form view model with live collision checks
+let container = build_modal_container_view(event_loop.state());
+assert!(container.is_open);
+let form = container.article_form.unwrap();
+assert!(form.is_submittable);
+assert_eq!(form.stage_field.selected_label, "Researching");
+
+// 6. Submit modal to persist to SQLite backend
+event_loop.dispatch(AppMessage::SubmitModal)?;
+assert_eq!(event_loop.state().articles.len(), 1);
+```
+
 ---
 
 
