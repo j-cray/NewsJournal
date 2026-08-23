@@ -16,10 +16,11 @@ use crate::state::AppState;
 use crate::theme::detector::{SystemThemeDetector, SystemThemeWatcher};
 use crate::theme::ResolvedTheme;
 use crate::views::{
-    build_articles_kanban_deck, build_contacts_view, build_modal_view, build_nav_view_models,
-    build_settings_view_with_platform, build_tasks_kanban_view, build_toast_view,
-    ArticleColumnViewModel, ArticlesKanbanDeckViewModel, ContactListItemViewModel, ModalViewModel,
-    NavItemViewModel, SettingsViewModel, TaskColumnViewModel, ToastContainerViewModel,
+    build_articles_kanban_deck, build_contacts_view, build_modal_container_view, build_modal_view,
+    build_nav_view_models, build_settings_view_with_platform, build_tasks_kanban_view,
+    build_toast_view, ArticleColumnViewModel, ArticlesKanbanDeckViewModel,
+    ContactListItemViewModel, ModalContainerViewModel, ModalViewModel, NavItemViewModel,
+    SettingsViewModel, TaskColumnViewModel, ToastContainerViewModel,
 };
 
 /// High-level presentation descriptor representing the complete COSMIC view tree.
@@ -53,6 +54,8 @@ pub struct CosmicViewTreeDescriptor {
     pub settings_view: Option<SettingsViewModel>,
     /// In-App Modal / Slide-over Drawer (if a modal is currently open).
     pub modal_view: Option<ModalViewModel>,
+    /// In-App Modal / Slide-over Drawer Container (if a modal is currently open).
+    pub modal_container: Option<ModalContainerViewModel>,
     /// Modal frosted glass style (if open).
     pub modal_glass_style: Option<CosmicGlassStyle>,
     /// Floating Toast notification container.
@@ -246,13 +249,14 @@ impl CosmicApp {
             None
         };
 
-        let (modal_view, modal_glass_style) = if state.modal.is_open() {
+        let (modal_view, modal_container, modal_glass_style) = if state.modal.is_open() {
             (
                 Some(build_modal_view(state)),
+                Some(build_modal_container_view(state)),
                 Some(glass.style_for(CosmicContainerClass::ModalDrawer, app_theme)),
             )
         } else {
-            (None, None)
+            (None, None, None)
         };
 
         let toast_view = build_toast_view(state);
@@ -273,6 +277,7 @@ impl CosmicApp {
             contacts_view,
             settings_view,
             modal_view,
+            modal_container,
             modal_glass_style,
             toast_view,
         }

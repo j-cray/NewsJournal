@@ -28,7 +28,11 @@ pub use articles::{
     NUM_ARTICLE_STAGES,
 };
 pub use contacts::{build_contacts_view, ContactListItemViewModel};
-pub use modal::{build_modal_view, ModalViewModel};
+pub use modal::{
+    build_modal_container_view, build_modal_container_view_with_layout, build_modal_view,
+    ModalBackdropViewModel, ModalContainerViewModel, ModalFooterViewModel, ModalGeometry,
+    ModalGlassMaterial, ModalHeaderViewModel, ModalPlacement, ModalViewModel,
+};
 pub use nav::{
     build_nav_bar_view, build_nav_bar_view_with_platform, build_nav_item, build_nav_view_models,
     NavBarViewModel, NavItemViewModel,
