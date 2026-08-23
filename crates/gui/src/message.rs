@@ -40,6 +40,8 @@ pub enum AppMessage {
     OpenEditArticleModal(Uuid),
     /// Opens the drawer to create a new task, optionally associated with an article.
     OpenNewTaskModal(Option<Uuid>),
+    /// Opens the drawer to create a new task in a specific status column, optionally associated with an article.
+    OpenNewTaskInStatusModal(TaskStatus, Option<Uuid>),
     /// Opens the drawer to edit an existing task by ID.
     OpenEditTaskModal(Uuid),
     /// Opens the modal to create a new contact.
@@ -215,6 +217,8 @@ pub enum AppMessage {
     SetStageFilter(Option<ArticleStage>),
     /// Sets contact filter.
     SetContactFilter(Option<Uuid>),
+    /// Sets parent article filter for task listings.
+    SetArticleFilter(Option<Uuid>),
     /// Clears all active filters.
     ClearFilters,
 

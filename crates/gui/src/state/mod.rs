@@ -317,6 +317,51 @@ impl AppState {
             .collect()
     }
 
+    /// Returns tasks filtered by search query, parent article, and urgency filters.
+    #[must_use]
+    pub fn filtered_tasks(&self) -> Vec<&Task> {
+        let query = self.filters.search_query.trim().to_lowercase();
+        let now = self.last_tick;
+
+        self.tasks
+            .iter()
+            .filter(|t| {
+                if let Some(target_aid) = self.filters.selected_article_id {
+                    if t.article_id != target_aid {
+                        return false;
+                    }
+                }
+
+                if !query.is_empty() {
+                    let parent = self.get_article(t.article_id);
+                    let title_match = t.title.to_lowercase().contains(&query);
+                    let notes_match = t
+                        .notes
+                        .as_deref()
+                        .map(|n| n.to_lowercase().contains(&query))
+                        .unwrap_or(false);
+                    let parent_match = parent
+                        .map(|a| {
+                            a.slug.to_lowercase().contains(&query)
+                                || a.headline.to_lowercase().contains(&query)
+                        })
+                        .unwrap_or(false);
+
+                    if !title_match && !notes_match && !parent_match {
+                        return false;
+                    }
+                }
+
+                match self.filters.urgency_filter {
+                    UrgencyFilter::All => true,
+                    UrgencyFilter::OverdueOnly => t.is_overdue(now),
+                    UrgencyFilter::DueSoonOnly => t.is_due_soon(now),
+                    UrgencyFilter::HasDeadlineOnly => t.due_date.is_some(),
+                }
+            })
+            .collect()
+    }
+
     // ==========================================
     // Notification & Alert Management
     // ==========================================

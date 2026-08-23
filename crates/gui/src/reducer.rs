@@ -70,6 +70,12 @@ impl AppState {
                 self.modal = ModalState::TaskForm(TaskDraft::new_for_article(default_article_id));
                 Vec::new()
             }
+            AppMessage::OpenNewTaskInStatusModal(status, article_id) => {
+                let default_article_id = article_id.or_else(|| self.articles.first().map(|a| a.id));
+                self.modal =
+                    ModalState::TaskForm(TaskDraft::new_for_status(status, default_article_id));
+                Vec::new()
+            }
             AppMessage::OpenEditTaskModal(id) => {
                 if let Some(task) = self.get_task(id) {
                     self.modal = ModalState::TaskForm(TaskDraft::from_task(task));
@@ -810,6 +816,10 @@ impl AppState {
             }
             AppMessage::SetContactFilter(c) => {
                 self.filters.selected_contact_id = c;
+                Vec::new()
+            }
+            AppMessage::SetArticleFilter(a) => {
+                self.filters.selected_article_id = a;
                 Vec::new()
             }
             AppMessage::ClearFilters => {

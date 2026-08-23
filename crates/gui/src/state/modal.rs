@@ -460,6 +460,16 @@ impl TaskDraft {
         }
     }
 
+    /// Creates a draft initialized with a specific workflow status and parent article.
+    #[must_use]
+    pub fn new_for_status(status: TaskStatus, article_id: Option<Uuid>) -> Self {
+        Self {
+            article_id,
+            status,
+            ..Default::default()
+        }
+    }
+
     /// Initializes a draft populated with an existing task's data.
     #[must_use]
     pub fn from_task(task: &Task) -> Self {

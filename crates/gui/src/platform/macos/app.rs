@@ -18,9 +18,10 @@ use crate::theme::ResolvedTheme;
 use crate::views::{
     build_articles_kanban_deck, build_contacts_view, build_modal_container_view_with_layout,
     build_modal_view, build_nav_view_models, build_settings_view_with_platform,
-    build_tasks_kanban_view, build_toast_view, ArticleColumnViewModel, ArticlesKanbanDeckViewModel,
+    build_tasks_kanban_deck, build_toast_view, ArticleColumnViewModel, ArticlesKanbanDeckViewModel,
     ContactListItemViewModel, ModalContainerViewModel, ModalPlacement, ModalViewModel,
-    NavItemViewModel, SettingsViewModel, TaskColumnViewModel, ToastContainerViewModel,
+    NavItemViewModel, SettingsViewModel, TaskColumnViewModel, TasksKanbanDeckViewModel,
+    ToastContainerViewModel,
 };
 
 /// High-level presentation descriptor representing the complete macOS Liquid Glass view tree.
@@ -47,6 +48,8 @@ pub struct MacosViewTreeDescriptor {
     /// Articles Kanban columns list (if active tab is ArticlesKanban).
     pub articles_view: Option<Vec<ArticleColumnViewModel>>,
     /// Tasks Kanban deck (if active tab is TasksKanban).
+    pub tasks_deck: Option<TasksKanbanDeckViewModel>,
+    /// Tasks Kanban columns list (if active tab is TasksKanban).
     pub tasks_view: Option<Vec<TaskColumnViewModel>>,
     /// Contacts view (if active tab is ContactsDirectory).
     pub contacts_view: Option<Vec<ContactListItemViewModel>>,
@@ -245,10 +248,11 @@ impl MacosApp {
             (None, None)
         };
 
-        let tasks_view = if state.active_tab == NavTab::TasksKanban {
-            Some(build_tasks_kanban_view(state))
+        let (tasks_view, tasks_deck) = if state.active_tab == NavTab::TasksKanban {
+            let deck = build_tasks_kanban_deck(state);
+            (Some(deck.columns.clone()), Some(deck))
         } else {
-            None
+            (None, None)
         };
 
         let contacts_view = if state.active_tab == NavTab::ContactsDirectory {
@@ -293,6 +297,7 @@ impl MacosApp {
             active_tab: state.active_tab,
             articles_deck,
             articles_view,
+            tasks_deck,
             tasks_view,
             contacts_view,
             settings_view,

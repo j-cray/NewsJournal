@@ -51,5 +51,14 @@ pub use settings::{
     build_settings_view, build_settings_view_with_platform, AppVersionInfo, DatabaseHealthStatus,
     DatabaseStatusViewModel, SettingsViewModel, ThemeOptionViewModel, ThemePreviewColors,
 };
-pub use tasks::{build_tasks_kanban_view, TaskCardViewModel, TaskColumnViewModel};
+pub use tasks::{
+    build_tasks_kanban_deck, build_tasks_kanban_deck_with_layout, build_tasks_kanban_view,
+    task_status_metadata, TaskCardViewModel, TaskColumnEmptyStateViewModel,
+    TaskColumnHeaderViewModel, TaskColumnViewModel, TaskDragGhostViewModel,
+    TaskDropPlaceholderViewModel, TaskStatusMetadata, TasksDeckEmptyStateViewModel,
+    TasksDeckLayoutConfig, TasksKanbanDeckViewModel, TasksToolbarViewModel,
+    DEFAULT_TASK_COLUMN_GAP, DEFAULT_TASK_COLUMN_WIDTH, DEFAULT_TASK_DECK_PADDING,
+    MAX_TASK_COLUMN_WIDTH, MIN_TASK_COLUMN_WIDTH, NUM_TASK_STATUSES, TASK_ACCENT_STRIP_WIDTH,
+    TASK_COMPLETE_GREEN_HEX, TASK_DUE_SOON_AMBER_HEX, TASK_OVERDUE_RED_HEX,
+};
 pub use toast::{build_toast_view, ToastContainerViewModel};
