@@ -421,8 +421,23 @@ impl AppState {
                 self.drag.start_drag(item);
                 Vec::new()
             }
+            AppMessage::DragStartWithPos { item, pos } => {
+                self.drag.start_drag_with_position(item, pos);
+                Vec::new()
+            }
+            AppMessage::DragMove { pointer_pos } => {
+                self.drag.update_pointer_position(pointer_pos);
+                Vec::new()
+            }
             AppMessage::DragHover(target) => {
                 self.drag.update_hover(target);
+                Vec::new()
+            }
+            AppMessage::DragHoverWithIndex {
+                target,
+                insert_index,
+            } => {
+                self.drag.update_hover_with_index(target, insert_index);
                 Vec::new()
             }
             AppMessage::DragDrop => {
@@ -432,23 +447,45 @@ impl AppState {
                             DragItem::ArticleCard { id, .. },
                             DropTarget::ArticleColumn(new_stage),
                         ) => {
+                            let mut slug_name = "story".to_string();
                             if let Some(a) = self.articles.iter_mut().find(|a| a.id == id) {
                                 a.stage = new_stage;
+                                slug_name = a.slug.clone();
                             }
                             self.recalculate_deadlines(Utc::now());
-                            vec![AppCommand::MoveArticleStage {
-                                id,
-                                stage: new_stage,
-                            }]
+                            vec![
+                                AppCommand::MoveArticleStage {
+                                    id,
+                                    stage: new_stage,
+                                },
+                                AppCommand::EmitToast(ToastMessage::info(
+                                    "Article Moved",
+                                    format!(
+                                        "Story '#{slug_name}' moved to {}",
+                                        new_stage.display_name()
+                                    ),
+                                )),
+                            ]
                         }
                         (DragItem::TaskCard { id, .. }, DropTarget::TaskColumn(new_status)) => {
+                            let mut task_title = "task".to_string();
                             if let Some(t) = self.tasks.iter_mut().find(|t| t.id == id) {
                                 t.status = new_status;
+                                task_title = t.title.clone();
                             }
-                            vec![AppCommand::MoveTaskStatus {
-                                id,
-                                status: new_status,
-                            }]
+                            vec![
+                                AppCommand::MoveTaskStatus {
+                                    id,
+                                    status: new_status,
+                                },
+                                AppCommand::EmitToast(ToastMessage::info(
+                                    "Task Moved",
+                                    format!(
+                                        "Task '{task_title}' moved to {}",
+                                        new_status.display_name()
+                                    ),
+                                )),
+                            ]
                         }
                         _ => Vec::new(),
                     }

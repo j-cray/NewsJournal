@@ -14,7 +14,7 @@ use crate::state::modal::{ArticleDraft, ContactDraft, SettingsDraft, TaskDraft};
 use crate::state::toast::ToastMessage;
 
 /// Exhaustive event and action messages processed by the application reducer.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AppMessage {
     // ==========================================
     // Navigation
@@ -135,8 +135,27 @@ pub enum AppMessage {
     // ==========================================
     /// Initiates mouse click-and-drag for a card.
     DragStart(DragItem),
+    /// Initiates mouse click-and-drag for a card with initial pointer coordinates (x, y).
+    DragStartWithPos {
+        /// Drag item to start dragging.
+        item: DragItem,
+        /// Initial pointer coordinates `(x, y)`.
+        pos: (f32, f32),
+    },
+    /// Updates mouse pointer coordinates during active card drag motion.
+    DragMove {
+        /// Current pointer coordinates `(x, y)`.
+        pointer_pos: (f32, f32),
+    },
     /// Updates the currently hovered drop column target.
     DragHover(Option<DropTarget>),
+    /// Updates the currently hovered drop column target with target insertion index.
+    DragHoverWithIndex {
+        /// Target column.
+        target: Option<DropTarget>,
+        /// Optional target insertion index.
+        insert_index: Option<usize>,
+    },
     /// Drops the currently dragged card into the hovered target column.
     DragDrop,
     /// Cancels active drag session.
