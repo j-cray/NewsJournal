@@ -389,6 +389,65 @@ pub struct TaskDragGhostViewModel {
     pub hover_status: Option<TaskStatus>,
 }
 
+impl TaskDragGhostViewModel {
+    /// Constructs a `TaskDragGhostViewModel` from a card view model, cursor coordinates, and hover state.
+    #[must_use]
+    pub fn from_card(
+        card: &TaskCardViewModel,
+        pointer_pos: (f32, f32),
+        hover_target: Option<DropTarget>,
+        column_width: f32,
+    ) -> Self {
+        let hover_status = match hover_target {
+            Some(DropTarget::TaskColumn(s)) => Some(s),
+            _ => None,
+        };
+        let is_valid_target = match hover_status {
+            Some(status) => status != card.status,
+            None => false,
+        };
+        let badge_label = match hover_status {
+            Some(status) if status != card.status => {
+                format!("MOVE TO {}", status.display_name().to_uppercase())
+            }
+            Some(_) => "SAME STATUS".to_string(),
+            None => "DRAGGING TASK".to_string(),
+        };
+
+        let width_px = (column_width - 8.0).max(240.0);
+        let height_px = 88.0;
+        let render_x = pointer_pos.0 - (width_px / 2.0);
+        let render_y = pointer_pos.1 - 24.0;
+
+        Self {
+            id: card.id,
+            title: card.title.clone(),
+            parent_article_slug: card.parent_article_slug.clone(),
+            parent_article_color: card.parent_article_color.clone(),
+            origin_status: card.status,
+            pointer_pos,
+            render_x,
+            render_y,
+            width_px,
+            height_px,
+            tilt_degrees: 2.5,
+            scale: 1.03,
+            opacity: 0.92,
+            shadow_blur_px: 24.0,
+            shadow_alpha: 0.38,
+            border_color_hex: if is_valid_target {
+                "#10B981".to_string()
+            } else {
+                card.parent_article_color.clone()
+            },
+            border_width_px: 2.0,
+            badge_label,
+            is_valid_target,
+            hover_status,
+        }
+    }
+}
+
 /// Presentation view model for the visual drop indicator placeholder in target Task Kanban columns.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TaskDropPlaceholderViewModel {
@@ -1145,53 +1204,12 @@ pub fn build_tasks_kanban_deck_with_layout(
                     let (orig_left, _) = layout.column_screen_bounds(orig_idx);
                     (orig_left + layout.column_width / 2.0, 160.0)
                 });
-                let width_px = (layout.column_width - 8.0).max(240.0);
-                let height_px = 88.0;
-                let render_x = pointer_pos.0 - (width_px / 2.0);
-                let render_y = pointer_pos.1 - 24.0;
-
-                let hover_status = match state.drag.hover_target {
-                    Some(DropTarget::TaskColumn(s)) => Some(s),
-                    _ => None,
-                };
-                let is_valid_target = match hover_status {
-                    Some(s) => s != origin_status,
-                    None => false,
-                };
-                let badge_label = match hover_status {
-                    Some(s) if s != origin_status => {
-                        format!("MOVE TO {}", s.display_name().to_uppercase())
-                    }
-                    Some(_) => "SAME STATUS".to_string(),
-                    None => "DRAGGING TASK".to_string(),
-                };
-
-                TaskDragGhostViewModel {
-                    id: card.id,
-                    title: card.title.clone(),
-                    parent_article_slug: card.parent_article_slug.clone(),
-                    parent_article_color: card.parent_article_color.clone(),
-                    origin_status,
+                TaskDragGhostViewModel::from_card(
+                    card,
                     pointer_pos,
-                    render_x,
-                    render_y,
-                    width_px,
-                    height_px,
-                    tilt_degrees: 2.5,
-                    scale: 1.03,
-                    opacity: 0.92,
-                    shadow_blur_px: 24.0,
-                    shadow_alpha: 0.38,
-                    border_color_hex: if is_valid_target {
-                        "#10B981".to_string()
-                    } else {
-                        card.parent_article_color.clone()
-                    },
-                    border_width_px: 2.0,
-                    badge_label,
-                    is_valid_target,
-                    hover_status,
-                }
+                    state.drag.hover_target,
+                    layout.column_width,
+                )
             });
 
             (
@@ -1225,10 +1243,6 @@ pub fn build_tasks_kanban_deck_with_layout(
         .iter()
         .map(|&status| {
             let meta = task_status_metadata(status);
-            let is_this_column_hovered = hover_status == Some(status);
-            let is_valid_target = matches!(active_drag_item, Some(DragItem::TaskCard { .. }));
-            let is_active_target = is_this_column_hovered && is_valid_target;
-
             let cards: Vec<TaskCardViewModel> = filtered_tasks
                 .iter()
                 .filter(|t| t.status == status)
@@ -1263,28 +1277,51 @@ pub fn build_tasks_kanban_deck_with_layout(
                 None
             };
 
-            let drop_placeholder = if is_active_target {
-                dragged_task_card.as_ref().map(|dragged| {
-                    TaskDropPlaceholderViewModel::new(
-                        status,
-                        state.drag.drop_insert_index.unwrap_or(task_count),
-                        &dragged.title,
-                        &dragged.parent_article_color,
-                        layout.column_width,
-                        is_valid_drop,
-                    )
-                })
-            } else {
-                None
-            };
+            let is_this_column_hovered = hover_status == Some(status);
+            let (
+                is_valid_drop_target,
+                is_active_drop_target,
+                drop_placeholder,
+                drop_highlight_border_hex,
+                drop_highlight_bg_tint_hex,
+            ) = match (active_drag_item, &dragged_task_card) {
+                (Some(DragItem::TaskCard { origin_status, .. }), Some(dragged)) => {
+                    let is_valid_target = origin_status != status;
+                    let is_active = is_this_column_hovered && is_valid_target;
 
-            let (drop_highlight_border_hex, drop_highlight_bg_tint_hex) = if is_active_target {
-                (
-                    Some(meta.accent_hex.to_string()),
-                    Some(format!("{}1A", meta.accent_hex)),
-                )
-            } else {
-                (None, None)
+                    let placeholder = if is_this_column_hovered {
+                        let insert_idx = state.drag.drop_insert_index.unwrap_or(cards.len());
+                        Some(TaskDropPlaceholderViewModel::new(
+                            status,
+                            insert_idx,
+                            &dragged.title,
+                            &dragged.parent_article_color,
+                            layout.column_width,
+                            is_valid_target,
+                        ))
+                    } else {
+                        None
+                    };
+
+                    let border_hex = if is_active {
+                        Some(meta.accent_hex.to_string())
+                    } else if is_this_column_hovered && !is_valid_target {
+                        Some("#EF4444".to_string())
+                    } else {
+                        None
+                    };
+
+                    let bg_hex = if is_active {
+                        Some(format!("{}1A", meta.accent_hex))
+                    } else if is_this_column_hovered && !is_valid_target {
+                        Some("#EF44441A".to_string())
+                    } else {
+                        None
+                    };
+
+                    (is_valid_target, is_active, placeholder, border_hex, bg_hex)
+                }
+                _ => (false, false, None, None, None),
             };
 
             TaskColumnViewModel {
@@ -1302,8 +1339,8 @@ pub fn build_tasks_kanban_deck_with_layout(
                 overdue_count,
                 due_soon_count,
                 is_hovered: is_this_column_hovered,
-                is_valid_drop_target: is_valid_target,
-                is_active_drop_target: is_active_target,
+                is_valid_drop_target,
+                is_active_drop_target,
                 drop_placeholder,
                 drop_highlight_border_hex,
                 drop_highlight_bg_tint_hex,
