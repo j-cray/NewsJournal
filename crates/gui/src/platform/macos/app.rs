@@ -16,9 +16,10 @@ use crate::state::AppState;
 use crate::theme::detector::{SystemThemeDetector, SystemThemeWatcher};
 use crate::theme::ResolvedTheme;
 use crate::views::{
-    build_articles_kanban_deck, build_contacts_view, build_modal_view, build_nav_view_models,
-    build_settings_view_with_platform, build_tasks_kanban_view, build_toast_view,
-    ArticleColumnViewModel, ArticlesKanbanDeckViewModel, ContactListItemViewModel, ModalViewModel,
+    build_articles_kanban_deck, build_contacts_view, build_modal_container_view_with_layout,
+    build_modal_view, build_nav_view_models, build_settings_view_with_platform,
+    build_tasks_kanban_view, build_toast_view, ArticleColumnViewModel, ArticlesKanbanDeckViewModel,
+    ContactListItemViewModel, ModalContainerViewModel, ModalPlacement, ModalViewModel,
     NavItemViewModel, SettingsViewModel, TaskColumnViewModel, ToastContainerViewModel,
 };
 
@@ -53,6 +54,8 @@ pub struct MacosViewTreeDescriptor {
     pub settings_view: Option<SettingsViewModel>,
     /// In-App Modal Sheet / Slide-over Drawer (if a modal is currently open).
     pub modal_view: Option<ModalViewModel>,
+    /// In-App Modal Sheet / Slide-over Drawer Container (if a modal is currently open).
+    pub modal_container: Option<ModalContainerViewModel>,
     /// Modal liquid glass style (if open).
     pub modal_glass_style: Option<MacosGlassStyle>,
     /// Floating Toast notification container.
@@ -245,13 +248,17 @@ impl MacosApp {
             None
         };
 
-        let (modal_view, modal_glass_style) = if state.modal.is_open() {
+        let (modal_view, modal_container, modal_glass_style) = if state.modal.is_open() {
+            let placement = ModalPlacement::default_for(&state.modal);
             (
                 Some(build_modal_view(state)),
+                Some(build_modal_container_view_with_layout(
+                    state, placement, true,
+                )),
                 Some(glass.style_for(MacosContainerClass::ModalDrawer, app_theme)),
             )
         } else {
-            (None, None)
+            (None, None, None)
         };
 
         let toast_view = build_toast_view(state);
@@ -272,6 +279,7 @@ impl MacosApp {
             contacts_view,
             settings_view,
             modal_view,
+            modal_container,
             modal_glass_style,
             toast_view,
             vibrancy_config: self.config.vibrancy.clone(),
