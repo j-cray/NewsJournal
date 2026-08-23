@@ -448,10 +448,15 @@ fn test_contact_delete_action_from_edit_drawer() {
             id,
             name,
             linked_article_count,
+            active_article_count,
+            active_article_slugs,
         } => {
             assert_eq!(*id, cid);
             assert_eq!(name, "Deep Throat");
             assert_eq!(*linked_article_count, 1);
+            assert_eq!(*active_article_count, 1);
+            assert_eq!(active_article_slugs.len(), 1);
+            assert_eq!(active_article_slugs[0], "watergate-followup");
         }
         other => panic!("Expected ConfirmDeleteContact, got {other:?}"),
     }

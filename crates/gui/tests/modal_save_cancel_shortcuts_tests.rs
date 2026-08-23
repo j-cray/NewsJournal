@@ -80,11 +80,8 @@ fn test_escape_key_closes_modals_across_all_variants() {
     );
 
     // 7. Confirm Delete Contact
-    let delete_contact_modal = ModalState::ConfirmDeleteContact {
-        id: Uuid::new_v4(),
-        name: "Jane Doe".to_string(),
-        linked_article_count: 2,
-    };
+    let delete_contact_modal =
+        ModalState::confirm_delete_contact_simple(Uuid::new_v4(), "Jane Doe", 2);
     assert_eq!(
         resolve_modal_shortcut("Escape", linux_none, false, &delete_contact_modal),
         Some(AppMessage::CloseModal)

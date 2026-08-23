@@ -1,7 +1,7 @@
 //! Pure state transition reducer for the NewsJournal GUI.
 
 use chrono::Utc;
-use newsjournal_core::models::{Task, TaskStatus};
+use newsjournal_core::models::{ArticleStage, Task, TaskStatus};
 use newsjournal_core::validation::validate_task_title;
 use uuid::Uuid;
 
@@ -118,11 +118,27 @@ impl AppState {
             }
             AppMessage::PromptDeleteContact(id) => {
                 if let Some(contact) = self.get_contact(id) {
-                    let linked_count = self.contact_articles.get(&id).map(Vec::len).unwrap_or(0);
+                    let linked_ids = self.contact_articles.get(&id).cloned().unwrap_or_default();
+                    let linked_article_count = linked_ids.len();
+
+                    let mut active_article_count = 0;
+                    let mut active_article_slugs = Vec::new();
+
+                    for article_id in linked_ids {
+                        if let Some(article) = self.get_article(article_id) {
+                            if article.stage != ArticleStage::Published {
+                                active_article_count += 1;
+                                active_article_slugs.push(article.slug.clone());
+                            }
+                        }
+                    }
+
                     self.modal = ModalState::ConfirmDeleteContact {
                         id,
                         name: contact.name.clone(),
-                        linked_article_count: linked_count,
+                        linked_article_count,
+                        active_article_count,
+                        active_article_slugs,
                     };
                 }
                 Vec::new()
@@ -654,12 +670,36 @@ impl AppState {
                             )),
                         ]
                     }
-                    ModalState::ConfirmDeleteContact { id, name, .. } => {
+                    ModalState::ConfirmDeleteContact {
+                        id,
+                        name,
+                        linked_article_count,
+                        active_article_count,
+                        ..
+                    } => {
+                        if let Some(pos) = self.contacts.iter().position(|c| c.id == id) {
+                            self.contacts.remove(pos);
+                        }
+                        self.contact_articles.remove(&id);
+                        for contacts in self.article_contacts.values_mut() {
+                            contacts.retain(|&cid| cid != id);
+                        }
+                        let toast_desc = if active_article_count > 0 {
+                            format!(
+                                "Contact '{name}' deleted and unlinked from {linked_article_count} stories ({active_article_count} active)"
+                            )
+                        } else if linked_article_count > 0 {
+                            format!(
+                                "Contact '{name}' deleted and unlinked from {linked_article_count} published stories"
+                            )
+                        } else {
+                            format!("Contact '{name}' deleted")
+                        };
                         vec![
                             AppCommand::DeleteContact(id),
                             AppCommand::EmitToast(ToastMessage::info(
                                 "Contact Deleted",
-                                format!("Contact '{name}' deleted"),
+                                toast_desc,
                             )),
                         ]
                     }
@@ -741,7 +781,27 @@ impl AppState {
                 vec![AppCommand::SaveContact(contact)]
             }
             AppMessage::DeleteContact(id) => {
-                vec![AppCommand::DeleteContact(id)]
+                let name = self
+                    .get_contact(id)
+                    .map(|c| c.name.clone())
+                    .unwrap_or_else(|| "Contact".to_string());
+                let linked_count = self.contact_articles.get(&id).map(Vec::len).unwrap_or(0);
+                if let Some(pos) = self.contacts.iter().position(|c| c.id == id) {
+                    self.contacts.remove(pos);
+                }
+                self.contact_articles.remove(&id);
+                for contacts in self.article_contacts.values_mut() {
+                    contacts.retain(|&cid| cid != id);
+                }
+                let toast_desc = if linked_count > 0 {
+                    format!("Contact '{name}' deleted and unlinked from {linked_count} stories")
+                } else {
+                    format!("Contact '{name}' deleted")
+                };
+                vec![
+                    AppCommand::DeleteContact(id),
+                    AppCommand::EmitToast(ToastMessage::info("Contact Deleted", toast_desc)),
+                ]
             }
             AppMessage::LinkContactToArticle {
                 article_id,

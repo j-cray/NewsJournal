@@ -853,12 +853,67 @@ pub enum ModalState {
         id: Uuid,
         /// Contact name.
         name: String,
-        /// Number of articles linked to this contact.
+        /// Total number of articles linked to this contact.
         linked_article_count: usize,
+        /// Number of active (non-published) articles linked to this contact.
+        active_article_count: usize,
+        /// Slugs of active articles linked to this contact.
+        active_article_slugs: Vec<String>,
     },
 }
 
 impl ModalState {
+    /// Creates a `ConfirmDeleteContact` modal state with full active story context.
+    #[must_use]
+    pub fn confirm_delete_contact(
+        id: Uuid,
+        name: impl Into<String>,
+        linked_article_count: usize,
+        active_article_count: usize,
+        active_article_slugs: Vec<String>,
+    ) -> Self {
+        Self::ConfirmDeleteContact {
+            id,
+            name: name.into(),
+            linked_article_count,
+            active_article_count,
+            active_article_slugs,
+        }
+    }
+
+    /// Creates a simple `ConfirmDeleteContact` modal state (useful for tests or unlinked contacts).
+    #[must_use]
+    pub fn confirm_delete_contact_simple(
+        id: Uuid,
+        name: impl Into<String>,
+        linked_article_count: usize,
+    ) -> Self {
+        Self::ConfirmDeleteContact {
+            id,
+            name: name.into(),
+            linked_article_count,
+            active_article_count: 0,
+            active_article_slugs: Vec::new(),
+        }
+    }
+
+    /// Returns `true` if this modal is a contact deletion confirmation.
+    #[must_use]
+    pub const fn is_confirm_delete_contact(&self) -> bool {
+        matches!(self, Self::ConfirmDeleteContact { .. })
+    }
+
+    /// Returns the number of active stories linked to the contact if in `ConfirmDeleteContact` state.
+    #[must_use]
+    pub const fn active_linked_articles_count(&self) -> usize {
+        match self {
+            Self::ConfirmDeleteContact {
+                active_article_count,
+                ..
+            } => *active_article_count,
+            _ => 0,
+        }
+    }
     /// Returns `true` if any modal or drawer is currently displayed.
     #[must_use]
     pub const fn is_open(&self) -> bool {

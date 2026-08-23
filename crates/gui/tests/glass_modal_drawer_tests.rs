@@ -180,11 +180,7 @@ fn test_modal_header_presentation_and_badges() {
     assert_eq!(container_contact.header.icon_emoji, "👥");
 
     // Delete contact confirmation header
-    state.modal = ModalState::ConfirmDeleteContact {
-        id: Uuid::new_v4(),
-        name: "Deep Throat".to_string(),
-        linked_article_count: 3,
-    };
+    state.modal = ModalState::confirm_delete_contact_simple(Uuid::new_v4(), "Deep Throat", 3);
     let container_del_contact = build_modal_container_view(&state);
     assert_eq!(container_del_contact.header.title, "Delete Contact?");
     assert_eq!(container_del_contact.header.icon_emoji, "⚠️");

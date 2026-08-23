@@ -2,6 +2,7 @@
 
 use newsjournal_core::models::ArticleStage;
 use serde::Serialize;
+use uuid::Uuid;
 
 use crate::state::modal::ModalState;
 use crate::state::AppState;
@@ -315,14 +316,27 @@ impl ModalHeaderViewModel {
             },
 
             ModalState::ConfirmDeleteContact {
+                active_article_count,
                 linked_article_count,
                 ..
             } => Self {
-                title: "Delete Contact?",
-                subtitle: "This action will permanently delete the contact record",
+                title: if *active_article_count > 0 {
+                    "Delete Contact & Unlink Active Stories?"
+                } else {
+                    "Delete Contact?"
+                },
+                subtitle: if *active_article_count > 0 {
+                    "⚠️ Contact is tagged in active stories - unlinking cannot be undone"
+                } else if *linked_article_count > 0 {
+                    "Contact is tagged in published stories - unlinking cannot be undone"
+                } else {
+                    "This action will permanently delete the contact record"
+                },
                 icon_emoji: "⚠️",
                 icon_name: "alert-triangle",
-                badge_text: if *linked_article_count > 0 {
+                badge_text: if *active_article_count > 0 {
+                    Some(format!("{active_article_count} active stories"))
+                } else if *linked_article_count > 0 {
                     Some(format!("{linked_article_count} linked articles"))
                 } else {
                     None
@@ -366,25 +380,25 @@ pub struct ModalFooterViewModel {
 }
 
 impl ModalFooterViewModel {
-    /// Constructs footer view model from the active modal state and platform context.
+    /// Generates modal footer view model from active modal state and platform context.
     #[must_use]
     pub fn from_modal_state(state: &ModalState, is_macos: bool) -> Self {
-        let save_shortcut = if is_macos { "⌘S" } else { "Ctrl+S" };
+        let cmd_key = if is_macos { "⌘" } else { "Ctrl+" };
 
         match state {
             ModalState::None => Self {
-                primary_label: "",
-                primary_shortcut: String::new(),
+                primary_label: "Save",
+                primary_shortcut: format!("{cmd_key}S"),
                 primary_is_destructive: false,
-                primary_is_disabled: true,
-                secondary_label: "",
+                primary_is_disabled: false,
+                secondary_label: "Cancel",
                 secondary_shortcut: "Esc",
                 validation_error_count: 0,
                 validation_hint: None,
-                save_tooltip: String::new(),
-                cancel_tooltip: "Esc".to_string(),
+                save_tooltip: format!("Save ({cmd_key}S)"),
+                cancel_tooltip: "Cancel (Esc)".to_string(),
                 validation_tooltips: Vec::new(),
-                can_save: false,
+                can_save: true,
             },
 
             ModalState::ArticleForm(draft) => {
@@ -409,11 +423,13 @@ impl ModalFooterViewModel {
                 };
 
                 let save_tooltip = if can_save {
-                    format!("{primary_label} ({save_shortcut})")
+                    format!("{primary_label} ({cmd_key}S)")
                 } else if err_count > 0 {
-                    format!("Cannot save: {err_count} required field(s) need attention ({save_shortcut})")
+                    format!(
+                        "Cannot save: {err_count} required field(s) need attention ({cmd_key}S)"
+                    )
                 } else {
-                    format!("Cannot save: required fields are empty ({save_shortcut})")
+                    format!("Cannot save: required fields are empty ({cmd_key}S)")
                 };
 
                 let mut validation_tooltips = Vec::new();
@@ -430,7 +446,7 @@ impl ModalFooterViewModel {
 
                 Self {
                     primary_label,
-                    primary_shortcut: save_shortcut.to_string(),
+                    primary_shortcut: format!("{cmd_key}S"),
                     primary_is_destructive: false,
                     primary_is_disabled: !can_save,
                     secondary_label: "Cancel",
@@ -460,11 +476,11 @@ impl ModalFooterViewModel {
 
                 let primary_label = if is_edit { "Save Task" } else { "Create Task" };
                 let save_tooltip = if can_save {
-                    format!("{primary_label} ({save_shortcut})")
+                    format!("{primary_label} ({cmd_key}S)")
                 } else if err_count > 0 {
-                    format!("Cannot save: {err_count} field(s) need attention ({save_shortcut})")
+                    format!("Cannot save: {err_count} field(s) need attention ({cmd_key}S)")
                 } else {
-                    format!("Cannot save: task title is required ({save_shortcut})")
+                    format!("Cannot save: task title is required ({cmd_key}S)")
                 };
 
                 let mut validation_tooltips = Vec::new();
@@ -480,7 +496,7 @@ impl ModalFooterViewModel {
 
                 Self {
                     primary_label,
-                    primary_shortcut: save_shortcut.to_string(),
+                    primary_shortcut: format!("{cmd_key}S"),
                     primary_is_destructive: false,
                     primary_is_disabled: !can_save,
                     secondary_label: "Cancel",
@@ -515,11 +531,11 @@ impl ModalFooterViewModel {
                 };
 
                 let save_tooltip = if can_save {
-                    format!("{primary_label} ({save_shortcut})")
+                    format!("{primary_label} ({cmd_key}S)")
                 } else if err_count > 0 {
-                    format!("Cannot save: {err_count} field(s) need attention ({save_shortcut})")
+                    format!("Cannot save: {err_count} field(s) need attention ({cmd_key}S)")
                 } else {
-                    format!("Cannot save: contact name is required ({save_shortcut})")
+                    format!("Cannot save: contact name is required ({cmd_key}S)")
                 };
 
                 let mut validation_tooltips = Vec::new();
@@ -536,7 +552,7 @@ impl ModalFooterViewModel {
 
                 Self {
                     primary_label,
-                    primary_shortcut: save_shortcut.to_string(),
+                    primary_shortcut: format!("{cmd_key}S"),
                     primary_is_destructive: false,
                     primary_is_disabled: !can_save,
                     secondary_label: "Cancel",
@@ -565,10 +581,33 @@ impl ModalFooterViewModel {
                 can_save: true,
             },
 
-            ModalState::ConfirmDeleteArticle { .. }
-            | ModalState::ConfirmDeleteTask { .. }
-            | ModalState::ConfirmDeleteContact { .. } => Self {
-                primary_label: "Delete Permanently",
+            ModalState::ConfirmDeleteArticle { .. } | ModalState::ConfirmDeleteTask { .. } => {
+                Self {
+                    primary_label: "Delete Permanently",
+                    primary_shortcut: "Enter".to_string(),
+                    primary_is_destructive: true,
+                    primary_is_disabled: false,
+                    secondary_label: "Cancel",
+                    secondary_shortcut: "Esc",
+                    validation_error_count: 0,
+                    validation_hint: None,
+                    save_tooltip: "Permanently delete item (Enter)".to_string(),
+                    cancel_tooltip: "Cancel and keep item (Esc)".to_string(),
+                    validation_tooltips: Vec::new(),
+                    can_save: true,
+                }
+            }
+
+            ModalState::ConfirmDeleteContact {
+                active_article_count,
+                linked_article_count,
+                ..
+            } => Self {
+                primary_label: if *active_article_count > 0 {
+                    "Delete & Unlink"
+                } else {
+                    "Delete Permanently"
+                },
                 primary_shortcut: "Enter".to_string(),
                 primary_is_destructive: true,
                 primary_is_disabled: false,
@@ -576,11 +615,196 @@ impl ModalFooterViewModel {
                 secondary_shortcut: "Esc",
                 validation_error_count: 0,
                 validation_hint: None,
-                save_tooltip: "Permanently delete item (Enter)".to_string(),
+                save_tooltip: if *active_article_count > 0 {
+                    format!(
+                        "Permanently delete contact and unlink from {active_article_count} active stories (Enter)"
+                    )
+                } else if *linked_article_count > 0 {
+                    format!(
+                        "Permanently delete contact and unlink from {linked_article_count} stories (Enter)"
+                    )
+                } else {
+                    "Permanently delete item (Enter)".to_string()
+                },
                 cancel_tooltip: "Cancel and keep item (Esc)".to_string(),
                 validation_tooltips: Vec::new(),
                 can_save: true,
             },
+        }
+    }
+}
+
+/// Target entity type for destructive confirmation dialogs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum DeleteEntityType {
+    Article,
+    Task,
+    Contact,
+}
+
+/// Rich presentation model for centered destructive confirmation dialogs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ConfirmationDialogViewModel {
+    /// Entity type being deleted.
+    pub entity_type: DeleteEntityType,
+    /// ID of the entity.
+    pub entity_id: Uuid,
+    /// Name, headline, or title of the target entity.
+    pub entity_name: String,
+    /// Primary warning message explaining the action.
+    pub warning_message: String,
+    /// Total number of linked items (e.g. articles linked to contact).
+    pub linked_count: usize,
+    /// Number of active (in-progress) linked items.
+    pub active_count: usize,
+    /// Slugs or titles of active linked items.
+    pub active_item_slugs: Vec<String>,
+    /// Whether this entity is linked to active stories.
+    pub has_active_links: bool,
+    /// High-emphasis warning banner/callout text (if linked to active stories).
+    pub alert_banner: Option<String>,
+    /// Unlink consequence bullet points / descriptions.
+    pub unlink_consequences: Vec<String>,
+    /// Primary destructive action button label.
+    pub confirm_button_label: String,
+    /// Cancel button label (e.g. "Cancel").
+    pub cancel_button_label: &'static str,
+    /// Confirm keyboard shortcut ("Enter").
+    pub confirm_shortcut: &'static str,
+    /// Cancel keyboard shortcut ("Esc").
+    pub cancel_shortcut: &'static str,
+}
+
+impl ConfirmationDialogViewModel {
+    /// Constructs a `ConfirmationDialogViewModel` from the current modal state, if it is a confirmation dialog.
+    #[must_use]
+    pub fn from_modal_state(state: &ModalState) -> Option<Self> {
+        match state {
+            ModalState::ConfirmDeleteContact {
+                id,
+                name,
+                linked_article_count,
+                active_article_count,
+                active_article_slugs,
+            } => {
+                let has_active = *active_article_count > 0;
+                let alert_banner = if has_active {
+                    Some(format!(
+                        "⚠️ Active Story Alert: Linked to {active_article_count} active stories. Deleting this contact will unlink them from ongoing journalism."
+                    ))
+                } else {
+                    None
+                };
+
+                let unlink_consequences = if has_active {
+                    vec![
+                        format!(
+                            "Unlinks source from {active_article_count} active stories ({})",
+                            active_article_slugs.join(", ")
+                        ),
+                        "Permanently deletes contact card and private contact notes".to_string(),
+                        format!(
+                            "Removes contact from {linked_article_count} total story records"
+                        ),
+                    ]
+                } else if *linked_article_count > 0 {
+                    vec![
+                        format!(
+                            "Unlinks contact from {linked_article_count} published stories"
+                        ),
+                        "Permanently deletes contact card and private notes".to_string(),
+                    ]
+                } else {
+                    vec![
+                        "Permanently deletes contact card and private notes".to_string(),
+                        "Contact is not currently tagged in any stories".to_string(),
+                    ]
+                };
+
+                let warning_message = if has_active {
+                    format!(
+                        "Are you sure you want to delete contact '{name}'? This contact is linked to {active_article_count} active stories and {linked_article_count} total stories."
+                    )
+                } else if *linked_article_count > 0 {
+                    format!(
+                        "Are you sure you want to delete contact '{name}'? This will unlink them from {linked_article_count} published stories."
+                    )
+                } else {
+                    format!("Are you sure you want to delete contact '{name}'? This action cannot be undone.")
+                };
+
+                let confirm_button_label = if has_active {
+                    format!("Delete & Unlink ({active_article_count} Active Stories)")
+                } else if *linked_article_count > 0 {
+                    "Delete & Unlink Contact".to_string()
+                } else {
+                    "Delete Permanently".to_string()
+                };
+
+                Some(Self {
+                    entity_type: DeleteEntityType::Contact,
+                    entity_id: *id,
+                    entity_name: name.clone(),
+                    warning_message,
+                    linked_count: *linked_article_count,
+                    active_count: *active_article_count,
+                    active_item_slugs: active_article_slugs.clone(),
+                    has_active_links: has_active,
+                    alert_banner,
+                    unlink_consequences,
+                    confirm_button_label,
+                    cancel_button_label: "Cancel",
+                    confirm_shortcut: "Enter",
+                    cancel_shortcut: "Esc",
+                })
+            }
+
+            ModalState::ConfirmDeleteArticle {
+                id,
+                slug,
+                headline,
+            } => Some(Self {
+                entity_type: DeleteEntityType::Article,
+                entity_id: *id,
+                entity_name: format!("{headline} ({slug})"),
+                warning_message: format!(
+                    "Are you sure you want to delete article '{headline}'? This action cannot be undone."
+                ),
+                linked_count: 0,
+                active_count: 0,
+                active_item_slugs: Vec::new(),
+                has_active_links: false,
+                alert_banner: None,
+                unlink_consequences: vec![
+                    "Permanently deletes article copy, metadata, and editorial history".to_string(),
+                    "Unlinks and deletes associated story tasks and contact tags".to_string(),
+                ],
+                confirm_button_label: "Delete Article Permanently".to_string(),
+                cancel_button_label: "Cancel",
+                confirm_shortcut: "Enter",
+                cancel_shortcut: "Esc",
+            }),
+
+            ModalState::ConfirmDeleteTask { id, title } => Some(Self {
+                entity_type: DeleteEntityType::Task,
+                entity_id: *id,
+                entity_name: title.clone(),
+                warning_message: format!("Are you sure you want to delete task '{title}'?"),
+                linked_count: 0,
+                active_count: 0,
+                active_item_slugs: Vec::new(),
+                has_active_links: false,
+                alert_banner: None,
+                unlink_consequences: vec![
+                    "Permanently deletes task item from the story workflow".to_string(),
+                ],
+                confirm_button_label: "Delete Task Permanently".to_string(),
+                cancel_button_label: "Cancel",
+                confirm_shortcut: "Enter",
+                cancel_shortcut: "Esc",
+            }),
+
+            _ => None,
         }
     }
 }
@@ -677,6 +901,8 @@ pub struct ModalContainerViewModel {
     pub task_form: Option<TaskFormViewModel>,
     /// Active contact form fields presentation model (when a ContactForm is open).
     pub contact_form: Option<ContactFormViewModel>,
+    /// Active confirmation dialog presentation model (when a destructive delete modal is open).
+    pub confirmation: Option<ConfirmationDialogViewModel>,
     /// Active modal state snapshot.
     pub state: ModalState,
 }
@@ -751,6 +977,7 @@ pub fn build_modal_container_view_with_layout(
     let backdrop = ModalBackdropViewModel::new(is_dark, is_open, is_destructive);
     let header = ModalHeaderViewModel::from_modal_state(&state.modal);
     let footer = ModalFooterViewModel::from_modal_state(&state.modal, is_macos);
+    let confirmation = ConfirmationDialogViewModel::from_modal_state(&state.modal);
 
     let glass = if is_macos {
         ModalGlassMaterial::macos(is_dark)
@@ -788,6 +1015,7 @@ pub fn build_modal_container_view_with_layout(
         article_form,
         task_form,
         contact_form,
+        confirmation,
         state: state.modal.clone(),
     }
 }
