@@ -1,13 +1,10 @@
 //! Articles Kanban board view models and horizontal deck layout engine.
 
-use chrono::{DateTime, Utc};
-use newsjournal_core::color::assign_color_for_slug;
-use newsjournal_core::deadline::{evaluate_article_deadline, DeadlineStatus};
 use newsjournal_core::models::ArticleStage;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::state::drag_drop::{DragItem, DropTarget};
+use crate::state::drag_drop::DropTarget;
 use crate::state::AppState;
 
 /// Default nominal column width in logical pixels.
@@ -349,39 +346,18 @@ impl DeckLayoutConfig {
     }
 }
 
-/// Formatted view model for a single Article card in the Kanban deck.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ArticleCardViewModel {
-    /// Unique article ID.
-    pub id: Uuid,
-    /// Slug identifier.
-    pub slug: String,
-    /// Article headline.
-    pub headline: String,
-    /// Active stage.
-    pub stage: ArticleStage,
-    /// Assigned accent hex color.
-    pub color_hex: String,
-    /// Optional target deadline.
-    pub deadline: Option<DateTime<Utc>>,
-    /// Calculated deadline status.
-    pub deadline_status: DeadlineStatus,
-    /// Overdue flag for prominent red alert styling.
-    pub is_overdue: bool,
-    /// Due soon flag for amber alert styling.
-    pub is_due_soon: bool,
-    /// Number of completed tasks.
-    pub task_completed: usize,
-    /// Total number of tasks.
-    pub task_total: usize,
-    /// Number of contacts tagged on this story.
-    pub tagged_contact_count: usize,
-    /// True if this card is currently being dragged.
-    pub is_dragging: bool,
-}
+pub use crate::views::article_card::{
+    calculate_contrast_color, format_contact_initials, format_deadline_badge,
+    ArticleCardContactTagViewModel, ArticleCardOverdueStyleViewModel, ArticleCardViewModel,
+    ArticleDeadlineBadgeViewModel, ArticleSlugBadgeViewModel, ArticleTaskCounterViewModel,
+    ColorIndicatorBarViewModel, IndicatorPosition, DEFAULT_ACCENT_STRIP_WIDTH,
+    DEFAULT_CARD_BORDER_WIDTH, DEFAULT_CARD_CORNER_RADIUS, DUE_SOON_AMBER_HEX,
+    DUE_SOON_BG_TINT_HEX, MAX_DESCRIPTION_SNIPPET_LEN, MAX_HEADLINE_SNIPPET_LEN,
+    OVERDUE_BG_TINT_HEX, OVERDUE_CARD_BORDER_WIDTH, OVERDUE_RED_HEX, SUCCESS_GREEN_HEX,
+};
 
 /// Formatted view model for one of the 6 production stage Kanban columns.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ArticleColumnViewModel {
     /// Production stage.
     pub stage: ArticleStage,
@@ -541,11 +517,6 @@ pub fn build_articles_kanban_deck_with_layout(
 ) -> ArticlesKanbanDeckViewModel {
     let stages = ArticleStage::all();
 
-    let active_drag_id = match state.drag.active_item {
-        Some(DragItem::ArticleCard { id, .. }) => Some(id),
-        _ => None,
-    };
-
     let hover_stage = match state.drag.hover_target {
         Some(DropTarget::ArticleColumn(stage)) => Some(stage),
         _ => None,
@@ -566,43 +537,16 @@ pub fn build_articles_kanban_deck_with_layout(
                 .iter()
                 .filter(|a| a.stage == stage)
                 .map(|article| {
-                    let deadline_status = evaluate_article_deadline(article, state.last_tick);
-                    let (task_completed, task_total) = state.task_completion_stats(article.id);
-                    let tagged_contact_count = state
-                        .article_contacts
-                        .get(&article.id)
-                        .map(Vec::len)
-                        .unwrap_or(0);
-                    let color_hex = article
-                        .color
-                        .clone()
-                        .unwrap_or_else(|| assign_color_for_slug(&article.slug).to_hex());
+                    let card = ArticleCardViewModel::build(article, state);
 
-                    let is_overdue = deadline_status.is_overdue();
-                    let is_due_soon = deadline_status.is_due_soon();
-
-                    if is_overdue {
+                    if card.is_overdue {
                         total_overdue_count += 1;
                     }
-                    if is_due_soon {
+                    if card.is_due_soon {
                         total_due_soon_count += 1;
                     }
 
-                    ArticleCardViewModel {
-                        id: article.id,
-                        slug: article.slug.clone(),
-                        headline: article.headline.clone(),
-                        stage: article.stage,
-                        color_hex,
-                        deadline: article.deadline,
-                        is_overdue,
-                        is_due_soon,
-                        deadline_status,
-                        task_completed,
-                        task_total,
-                        tagged_contact_count,
-                        is_dragging: active_drag_id == Some(article.id),
-                    }
+                    card
                 })
                 .collect();
 
