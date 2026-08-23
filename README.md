@@ -288,6 +288,39 @@ event_loop.dispatch(AppMessage::DragDrop)?;
 assert_eq!(event_loop.state().articles[0].stage, ArticleStage::Writing);
 ```
 
+### 12. Empty States, Card Counters & Creation Triggers
+
+```rust
+use newsjournal_core::ArticleStage;
+use newsjournal_gui::message::AppMessage;
+use newsjournal_gui::views::build_articles_kanban_deck;
+use newsjournal_gui::{AppState, EventLoop};
+
+let state = AppState::in_memory()?;
+let mut event_loop = EventLoop::new(state);
+
+let deck = build_articles_kanban_deck(event_loop.state());
+
+// 1. Deck toolbar metrics & primary creation button
+assert_eq!(deck.toolbar.primary_action_label, "+ New Article");
+assert_eq!(deck.toolbar.total_count_label, "0 stories");
+assert!(deck.deck_empty_state.is_some());
+
+// 2. Column headers with card count labels & stage-specific quick add triggers
+let pitching_col = deck.column(ArticleStage::Pitching).unwrap();
+assert_eq!(pitching_col.header.card_count_label, "0 stories");
+assert_eq!(pitching_col.header.quick_add_label, "+ Add Pitch");
+
+// 3. Column empty states with stage prompts and drop zone guidance
+let empty_state = pitching_col.empty_state.as_ref().unwrap();
+assert_eq!(empty_state.title, "No Story Pitches");
+assert_eq!(empty_state.action_button_label, "+ New Pitch");
+assert!(empty_state.is_drop_target_hint);
+
+// 4. Quick creation in a specific stage
+event_loop.dispatch(AppMessage::OpenNewArticleInStageModal(ArticleStage::Writing))?;
+```
+
 ---
 
 

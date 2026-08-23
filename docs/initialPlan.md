@@ -94,7 +94,7 @@ Based on the architectural alignment and design interview:
   - Pointer click-and-drag mechanics to drag an article card from one column and drop into another.
   - Visual drag ghost and drop indicator placeholders.
   - Dispatch of stage-change update events to SQLite backend on successful drop.
-- [ ] **5.4 Empty State & Creation Triggers**: Column headers with card counts and "New Article" quick action button in toolbar.
+- [x] **5.4 Empty State & Creation Triggers**: Column headers with card counts and "New Article" quick action button in toolbar.
 
 ### Phase 6: In-App Modal / Slide-over Drawer for Article Editing
 - [ ] **6.1 Glass Modal/Drawer Container**: Centered or slide-over layered glass modal with background dimming and blur.
