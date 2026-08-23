@@ -117,7 +117,7 @@ Based on the architectural alignment and design interview:
   1. To-Do
   2. In Progress
   3. Complete
-- [ ] **7.2 Task Card Component**:
+- [x] **7.2 Task Card Component**:
   - Left accent color strip matching the parent article's color.
   - Parent article slug badge/pill.
   - Task title, optional due date badge, and notes preview.
