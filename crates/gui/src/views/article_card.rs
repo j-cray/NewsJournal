@@ -443,6 +443,8 @@ pub struct ArticleCardViewModel {
     pub tagged_contact_count: usize,
     /// True if this card is currently being dragged.
     pub is_dragging: bool,
+    /// Opacity factor for rendering this card (`0.35` when actively being dragged, `1.0` otherwise).
+    pub drag_opacity: f32,
     /// True if this card is actively hovered.
     pub is_hovered: bool,
 }
@@ -538,6 +540,7 @@ impl ArticleCardViewModel {
             .map(|&contact| ArticleCardContactTagViewModel::from_contact(contact))
             .collect();
         let tagged_contact_count = tagged_contacts.len();
+        let drag_opacity = if is_dragging { 0.35 } else { 1.0 };
 
         Self {
             id: article.id,
@@ -561,7 +564,224 @@ impl ArticleCardViewModel {
             tagged_contacts,
             tagged_contact_count,
             is_dragging,
+            drag_opacity,
             is_hovered,
+        }
+    }
+}
+
+/// Presentation view model for the floating/lifted drag ghost following the cursor during active drag.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DragGhostViewModel {
+    /// Unique ID of the article being dragged.
+    pub id: Uuid,
+    /// Slug identifier.
+    pub slug: String,
+    /// Formatted slug with `#` prefix.
+    pub display_slug: String,
+    /// Article headline.
+    pub headline: String,
+    /// Truncated headline snippet.
+    pub headline_snippet: String,
+    /// Workflow stage where the drag originated.
+    pub origin_stage: ArticleStage,
+    /// Assigned accent hex color.
+    pub color_hex: String,
+    /// High-contrast foreground color hex (`#FFFFFF` or `#0F172A`).
+    pub contrast_fg_hex: String,
+    /// Current pointer coordinates `(x, y)` in logical pixels.
+    pub pointer_pos: (f32, f32),
+    /// Top-left render coordinates `(x, y)` of the ghost card.
+    pub render_x: f32,
+    /// Top-left render Y coordinate in logical pixels.
+    pub render_y: f32,
+    /// Width of the ghost card in logical pixels.
+    pub width_px: f32,
+    /// Height of the ghost card in logical pixels.
+    pub height_px: f32,
+    /// Visual rotation tilt in degrees (e.g. 2.5° for tactile lifted feel).
+    pub tilt_degrees: f32,
+    /// Visual scale factor (e.g. 1.03 for elevation).
+    pub scale: f32,
+    /// Surface opacity (e.g. 0.90 for frosted glass overlay).
+    pub opacity: f32,
+    /// Shadow blur radius in pixels.
+    pub shadow_blur_px: f32,
+    /// Shadow opacity alpha.
+    pub shadow_alpha: f32,
+    /// Border highlight color hex.
+    pub border_color_hex: String,
+    /// Border width in logical pixels.
+    pub border_width_px: f32,
+    /// Dynamic status badge text (e.g. `"MOVING TO WRITING"` or `"DRAGGING STORY"`).
+    pub badge_label: String,
+    /// Deadline badge view model if deadline is present.
+    pub deadline_badge: Option<ArticleDeadlineBadgeViewModel>,
+    /// Task completion counter label (e.g. `"2/5 tasks"`).
+    pub task_counter_label: Option<String>,
+    /// Initials of tagged contacts.
+    pub tagged_contact_initials: Vec<String>,
+    /// Total count of tagged contacts.
+    pub tagged_contact_count: usize,
+    /// Whether the current hover target is a valid drop destination.
+    pub is_valid_target: bool,
+    /// The stage currently hovered over, if any.
+    pub hover_stage: Option<ArticleStage>,
+}
+
+impl DragGhostViewModel {
+    /// Constructs a `DragGhostViewModel` from a card view model, cursor coordinates, and hover state.
+    #[must_use]
+    pub fn from_card(
+        card: &ArticleCardViewModel,
+        pointer_pos: (f32, f32),
+        hover_target: Option<crate::state::drag_drop::DropTarget>,
+        column_width: f32,
+    ) -> Self {
+        let hover_stage = match hover_target {
+            Some(crate::state::drag_drop::DropTarget::ArticleColumn(s)) => Some(s),
+            _ => None,
+        };
+
+        let is_valid_target = match hover_stage {
+            Some(stage) => stage != card.stage,
+            None => false,
+        };
+
+        let badge_label = match hover_stage {
+            Some(stage) if stage != card.stage => {
+                format!("MOVE TO {}", stage.display_name().to_uppercase())
+            }
+            Some(_) => "SAME STAGE".to_string(),
+            None => "DRAGGING STORY".to_string(),
+        };
+
+        let width_px = (column_width - 8.0).max(240.0);
+        let height_px = 118.0;
+
+        // Position card centered horizontally around pointer, slight vertical offset
+        let render_x = pointer_pos.0 - (width_px / 2.0);
+        let render_y = pointer_pos.1 - 24.0;
+
+        let tagged_contact_initials: Vec<String> = card
+            .tagged_contacts
+            .iter()
+            .map(|c| c.initials.clone())
+            .collect();
+
+        Self {
+            id: card.id,
+            slug: card.slug.clone(),
+            display_slug: card.slug_badge.display_text.clone(),
+            headline: card.headline.clone(),
+            headline_snippet: card.headline_snippet.clone(),
+            origin_stage: card.stage,
+            color_hex: card.color_hex.clone(),
+            contrast_fg_hex: card.color_indicator.contrast_fg_hex.clone(),
+            pointer_pos,
+            render_x,
+            render_y,
+            width_px,
+            height_px,
+            tilt_degrees: 2.5,
+            scale: 1.03,
+            opacity: 0.92,
+            shadow_blur_px: 24.0,
+            shadow_alpha: 0.38,
+            border_color_hex: if is_valid_target {
+                "#10B981".to_string() // Emerald green border on valid drop target
+            } else {
+                card.color_hex.clone()
+            },
+            border_width_px: 2.0,
+            badge_label,
+            deadline_badge: card.deadline_badge.clone(),
+            task_counter_label: if card.task_total > 0 {
+                Some(card.task_counter.formatted_label.clone())
+            } else {
+                None
+            },
+            tagged_contact_initials,
+            tagged_contact_count: card.tagged_contact_count,
+            is_valid_target,
+            hover_stage,
+        }
+    }
+}
+
+/// Presentation view model for the visual drop indicator placeholder in target Kanban columns.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DropPlaceholderViewModel {
+    /// Target article stage of the column.
+    pub target_stage: ArticleStage,
+    /// Target insertion index in the column's card stack.
+    pub insert_index: usize,
+    /// Width of the placeholder container in logical pixels.
+    pub width_px: f32,
+    /// Height of the placeholder container in logical pixels.
+    pub height_px: f32,
+    /// Border color hex matching target stage or dragged card accent.
+    pub border_color_hex: String,
+    /// Border width in logical pixels (default 2.0).
+    pub border_width_px: f32,
+    /// Border stroke style (`"dashed"`).
+    pub border_style: &'static str,
+    /// Translucent background tint hex.
+    pub bg_tint_hex: String,
+    /// Descriptive prompt text (e.g. `"+ Move '#housing-crisis' to Writing"`).
+    pub prompt_text: String,
+    /// Whether this placeholder represents a valid drop target.
+    pub is_valid: bool,
+    /// Whether the pulsing animation indicator is active.
+    pub is_pulse_active: bool,
+}
+
+impl DropPlaceholderViewModel {
+    /// Constructs a `DropPlaceholderViewModel` for a target stage column.
+    #[must_use]
+    pub fn new(
+        target_stage: ArticleStage,
+        insert_index: usize,
+        dragged_slug: &str,
+        dragged_color_hex: &str,
+        column_width: f32,
+        is_valid: bool,
+    ) -> Self {
+        let width_px = (column_width - 8.0).max(240.0);
+        let height_px = 104.0;
+        let prompt_text = if is_valid {
+            format!(
+                "+ Move '#{dragged_slug}' to {}",
+                target_stage.display_name()
+            )
+        } else {
+            "Cannot drop in current stage".to_string()
+        };
+
+        let bg_tint_hex = if is_valid {
+            format!("{dragged_color_hex}1A") // ~10% alpha
+        } else {
+            "#EF44441A".to_string()
+        };
+
+        let border_color_hex = if is_valid {
+            dragged_color_hex.to_string()
+        } else {
+            "#EF4444".to_string()
+        };
+
+        Self {
+            target_stage,
+            insert_index,
+            width_px,
+            height_px,
+            border_color_hex,
+            border_width_px: 2.0,
+            border_style: "dashed",
+            bg_tint_hex,
+            prompt_text,
+            is_valid,
+            is_pulse_active: is_valid,
         }
     }
 }

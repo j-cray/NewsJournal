@@ -344,16 +344,36 @@ impl DeckLayoutConfig {
         let step = (self.viewport_width - self.column_width).max(self.column_width);
         self.scroll_by(step);
     }
+
+    /// Computes which column index (0..5) is located at the given screen X coordinate.
+    #[must_use]
+    pub fn column_index_at_screen_x(&self, screen_x: f32) -> Option<usize> {
+        for i in 0..NUM_ARTICLE_STAGES {
+            let (left, right) = self.column_screen_bounds(i);
+            if screen_x >= left && screen_x <= right {
+                return Some(i);
+            }
+        }
+        None
+    }
+
+    /// Computes which `ArticleStage` is located at the given screen X coordinate.
+    #[must_use]
+    pub fn stage_at_screen_x(&self, screen_x: f32) -> Option<ArticleStage> {
+        let idx = self.column_index_at_screen_x(screen_x)?;
+        ArticleStage::all().get(idx).copied()
+    }
 }
 
 pub use crate::views::article_card::{
     calculate_contrast_color, format_contact_initials, format_deadline_badge,
     ArticleCardContactTagViewModel, ArticleCardOverdueStyleViewModel, ArticleCardViewModel,
     ArticleDeadlineBadgeViewModel, ArticleSlugBadgeViewModel, ArticleTaskCounterViewModel,
-    ColorIndicatorBarViewModel, IndicatorPosition, DEFAULT_ACCENT_STRIP_WIDTH,
-    DEFAULT_CARD_BORDER_WIDTH, DEFAULT_CARD_CORNER_RADIUS, DUE_SOON_AMBER_HEX,
-    DUE_SOON_BG_TINT_HEX, MAX_DESCRIPTION_SNIPPET_LEN, MAX_HEADLINE_SNIPPET_LEN,
-    OVERDUE_BG_TINT_HEX, OVERDUE_CARD_BORDER_WIDTH, OVERDUE_RED_HEX, SUCCESS_GREEN_HEX,
+    ColorIndicatorBarViewModel, DragGhostViewModel, DropPlaceholderViewModel, IndicatorPosition,
+    DEFAULT_ACCENT_STRIP_WIDTH, DEFAULT_CARD_BORDER_WIDTH, DEFAULT_CARD_CORNER_RADIUS,
+    DUE_SOON_AMBER_HEX, DUE_SOON_BG_TINT_HEX, MAX_DESCRIPTION_SNIPPET_LEN,
+    MAX_HEADLINE_SNIPPET_LEN, OVERDUE_BG_TINT_HEX, OVERDUE_CARD_BORDER_WIDTH, OVERDUE_RED_HEX,
+    SUCCESS_GREEN_HEX,
 };
 
 /// Formatted view model for one of the 6 production stage Kanban columns.
@@ -385,13 +405,23 @@ pub struct ArticleColumnViewModel {
     pub due_soon_count: usize,
     /// Whether this column is actively hovered during drag-and-drop.
     pub is_hovered: bool,
+    /// Whether this column is a valid drop destination for the currently dragged card.
+    pub is_valid_drop_target: bool,
+    /// Whether this column is the active valid drop target.
+    pub is_active_drop_target: bool,
+    /// Visual drop indicator placeholder if this column is the active drop target.
+    pub drop_placeholder: Option<DropPlaceholderViewModel>,
+    /// Column border highlight hex during drag hover.
+    pub drop_highlight_border_hex: Option<String>,
+    /// Column background tint hex during drag hover.
+    pub drop_highlight_bg_tint_hex: Option<String>,
     /// Whether this column has zero cards.
     pub is_empty: bool,
     /// Stage-specific empty state guidance message.
     pub empty_state_prompt: &'static str,
 }
 
-/// Formatted view model for the entire Articles Kanban Deck (6 columns, horizontal scrolling).
+/// Formatted view model for the entire Articles Kanban Deck (6 columns, horizontal scrolling, drag ghost).
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ArticlesKanbanDeckViewModel {
     /// The 6 production stage columns in sequential workflow order.
@@ -408,6 +438,16 @@ pub struct ArticlesKanbanDeckViewModel {
     pub search_query: String,
     /// Active stage filter if filtering to a single stage.
     pub selected_stage_filter: Option<ArticleStage>,
+    /// Active card currently being dragged, if any.
+    pub active_drag_item: Option<crate::state::drag_drop::DragItem>,
+    /// Whether a drag-and-drop session is currently active.
+    pub is_dragging: bool,
+    /// Current hovered drop target.
+    pub hover_target: Option<crate::state::drag_drop::DropTarget>,
+    /// Whether the current drag hover target is valid for dropping.
+    pub is_valid_drop: bool,
+    /// Floating visual drag ghost following the cursor, if drag is active.
+    pub drag_ghost: Option<DragGhostViewModel>,
     /// Horizontal scrolling and geometry configuration for the deck.
     pub layout: DeckLayoutConfig,
 }
@@ -444,6 +484,26 @@ impl ArticlesKanbanDeckViewModel {
             }
         }
         None
+    }
+
+    /// Returns the article stage located at the given screen X coordinate.
+    #[must_use]
+    pub fn stage_at_point(&self, screen_x: f32, _screen_y: f32) -> Option<ArticleStage> {
+        self.layout.stage_at_screen_x(screen_x)
+    }
+
+    /// Returns the column index located at the given screen X coordinate.
+    #[must_use]
+    pub fn column_index_at_point(&self, screen_x: f32, _screen_y: f32) -> Option<usize> {
+        self.layout.column_index_at_screen_x(screen_x)
+    }
+
+    /// Returns the drop target located at the given screen X coordinate.
+    #[must_use]
+    pub fn drop_target_at_point(&self, screen_x: f32, _screen_y: f32) -> Option<DropTarget> {
+        self.layout
+            .stage_at_screen_x(screen_x)
+            .map(DropTarget::ArticleColumn)
     }
 
     /// Returns `true` if all columns in the deck have zero articles.
@@ -517,10 +577,43 @@ pub fn build_articles_kanban_deck_with_layout(
 ) -> ArticlesKanbanDeckViewModel {
     let stages = ArticleStage::all();
 
+    let (active_drag_item, dragged_article_card, drag_ghost) = match state.drag.active_item {
+        Some(crate::state::drag_drop::DragItem::ArticleCard { id, origin_stage }) => {
+            let card_opt = state
+                .get_article(id)
+                .map(|article| ArticleCardViewModel::build(article, state));
+
+            let ghost_opt = card_opt.as_ref().map(|card| {
+                let pointer_pos = state.drag.pointer_pos.unwrap_or_else(|| {
+                    let orig_idx = stage_metadata(origin_stage).index;
+                    let (orig_left, _) = layout.column_screen_bounds(orig_idx);
+                    (orig_left + layout.column_width / 2.0, 160.0)
+                });
+                DragGhostViewModel::from_card(
+                    card,
+                    pointer_pos,
+                    state.drag.hover_target,
+                    layout.column_width,
+                )
+            });
+
+            (
+                Some(crate::state::drag_drop::DragItem::ArticleCard { id, origin_stage }),
+                card_opt,
+                ghost_opt,
+            )
+        }
+        Some(task_item) => (Some(task_item), None, None),
+        None => (None, None, None),
+    };
+
     let hover_stage = match state.drag.hover_target {
         Some(DropTarget::ArticleColumn(stage)) => Some(stage),
         _ => None,
     };
+
+    let is_dragging = state.drag.is_dragging();
+    let is_valid_drop = state.drag.is_valid_drop();
 
     let filtered_articles = state.filtered_articles();
 
@@ -555,6 +648,56 @@ pub fn build_articles_kanban_deck_with_layout(
             let due_soon_count = cards.iter().filter(|c| c.is_due_soon).count();
             total_article_count += card_count;
 
+            let is_hovered = hover_stage == Some(stage);
+            let (
+                is_valid_drop_target,
+                is_active_drop_target,
+                drop_placeholder,
+                drop_highlight_border_hex,
+                drop_highlight_bg_tint_hex,
+            ) = match (active_drag_item, &dragged_article_card) {
+                (
+                    Some(crate::state::drag_drop::DragItem::ArticleCard { origin_stage, .. }),
+                    Some(dragged),
+                ) => {
+                    let is_valid_target = origin_stage != stage;
+                    let is_active = is_hovered && is_valid_target;
+
+                    let placeholder = if is_hovered {
+                        let insert_idx = state.drag.drop_insert_index.unwrap_or(cards.len());
+                        Some(DropPlaceholderViewModel::new(
+                            stage,
+                            insert_idx,
+                            &dragged.slug,
+                            &dragged.color_hex,
+                            layout.column_width,
+                            is_valid_target,
+                        ))
+                    } else {
+                        None
+                    };
+
+                    let border_hex = if is_active {
+                        Some("#10B981".to_string())
+                    } else if is_hovered && !is_valid_target {
+                        Some("#EF4444".to_string())
+                    } else {
+                        None
+                    };
+
+                    let bg_hex = if is_active {
+                        Some(format!("{}14", dragged.color_hex))
+                    } else if is_hovered && !is_valid_target {
+                        Some("#EF444414".to_string())
+                    } else {
+                        None
+                    };
+
+                    (is_valid_target, is_active, placeholder, border_hex, bg_hex)
+                }
+                _ => (false, false, None, None, None),
+            };
+
             ArticleColumnViewModel {
                 stage,
                 index: meta.index,
@@ -568,7 +711,12 @@ pub fn build_articles_kanban_deck_with_layout(
                 overdue_count,
                 due_soon_count,
                 cards,
-                is_hovered: hover_stage == Some(stage),
+                is_hovered,
+                is_valid_drop_target,
+                is_active_drop_target,
+                drop_placeholder,
+                drop_highlight_border_hex,
+                drop_highlight_bg_tint_hex,
                 is_empty: card_count == 0,
                 empty_state_prompt: meta.empty_state_prompt,
             }
@@ -587,6 +735,11 @@ pub fn build_articles_kanban_deck_with_layout(
         is_filtered,
         search_query,
         selected_stage_filter,
+        active_drag_item,
+        is_dragging,
+        hover_target: state.drag.hover_target,
+        is_valid_drop,
+        drag_ghost,
         layout,
     }
 }
