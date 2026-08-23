@@ -402,8 +402,3 @@ Automated reviews run on open/synchronized pull requests. You can also summon sp
 | `/gemini-review` or `@gemini` | Summons **Google Gemini** |
 | `/claude-review` or `@claude` | Summons **Anthropic Claude** |
 | `/copilot-review` or `@copilot` | Summons **GitHub Copilot** |
-
-### Required Repository Secrets
-- `GEMINI_API_KEY`: API key for Google Gemini model reviews.
-- `ANTHROPIC_API_KEY`: API key for Anthropic Claude model reviews.
-- `GITHUB_TOKEN`: Standard repository token provided automatically by GitHub Actions.
