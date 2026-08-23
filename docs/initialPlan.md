@@ -128,7 +128,7 @@ Based on the architectural alignment and design interview:
   - Synchronized state updates reflecting immediately on the Article card task counters.
 
 ### Phase 8: Contacts Directory & Tagging Manager
-- [ ] **8.1 Contacts List View**: Clean, searchable, and sortable list/table view showing Name, Organization, Role, Email, Phone, and tagged Articles count.
+- [x] **8.1 Contacts List View**: Clean, searchable, and sortable list/table view showing Name, Organization, Role, Email, Phone, and tagged Articles count.
 - [ ] **8.2 Contact Creation & Edit Drawer**:
   - Fields for Name (required), Organization, Role, Phone, Email, and Notes.
   - Associated articles list showing all stories where this contact is tagged.
