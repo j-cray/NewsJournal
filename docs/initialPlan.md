@@ -56,7 +56,7 @@ Based on the architectural alignment and design interview:
 
 ### Phase 3: GUI Framework & Platform Glass Rendering
 - [x] **3.1 GUI Crate Scaffolding**: Setup `newsjournal-gui` with shared application state, message enums, and event loops.
-- [ ] **3.2 Linux COSMIC Implementation (`#[cfg(target_os = "linux")]`)**:
+- [x] **3.2 Linux COSMIC Implementation (`#[cfg(target_os = "linux")]`)**:
   - Integrate `libcosmic` application wrapper.
   - Configure COSMIC frosted glass theme styling and background blur materials.
   - Setup COSMIC app icon, header bar, and window sizing.

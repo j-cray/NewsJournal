@@ -111,6 +111,34 @@ event_loop.dispatch(AppMessage::CreateArticle(
 assert_eq!(event_loop.state().articles.len(), 1);
 ```
 
+### 5. Linux COSMIC Desktop Integration
+
+```rust
+use newsjournal_core::storage::StorageService;
+use newsjournal_gui::cosmic::{CosmicApp, CosmicAppConfig, CosmicThemeAdapter, CosmicThemeMode, CosmicAccentColor};
+use newsjournal_gui::{AppState, NavTab};
+
+// Setup COSMIC app wrapper with frosted glass materials and responsive window layout
+let storage = StorageService::in_memory()?;
+let mut state = AppState::new(storage);
+state.load_all()?;
+
+let config = CosmicAppConfig {
+    theme_adapter: CosmicThemeAdapter::new(
+        CosmicThemeMode::System,
+        CosmicAccentColor::CosmicBlue,
+        true,
+    ),
+    ..Default::default()
+};
+
+let mut app = CosmicApp::with_config(state, config);
+let view_tree = app.build_view_tree();
+
+println!("COSMIC Window Title: {}", view_tree.window_title);
+println!("Header Bar: {}", view_tree.header_bar.display_title());
+```
+
 ---
 
 
