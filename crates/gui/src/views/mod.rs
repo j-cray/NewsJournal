@@ -13,9 +13,10 @@ pub mod toast;
 pub use article_form::{
     build_article_form_view, ArticleColorPickerViewModel, ArticleDeadlineFieldViewModel,
     ArticleDescriptionFieldViewModel, ArticleFormViewModel, ArticleHeadlineFieldViewModel,
-    ArticleSlugFieldViewModel, ArticleStageFieldViewModel, ColorSwatchViewModel,
-    ContactPillViewModel, ContactTaggingSectionViewModel, DeadlinePreset, DeadlinePresetViewModel,
-    InlineContactFormViewModel, StageOptionViewModel, DEFAULT_DEADLINE_HOUR, MAX_HEADLINE_LENGTH,
+    ArticleSlugFieldViewModel, ArticleStageFieldViewModel, ArticleTasksSectionViewModel,
+    ColorSwatchViewModel, ContactPillViewModel, ContactTaggingSectionViewModel, DeadlinePreset,
+    DeadlinePresetViewModel, InlineContactFormViewModel, StageOptionViewModel,
+    TaskChecklistItemViewModel, DEFAULT_DEADLINE_HOUR, MAX_HEADLINE_LENGTH,
 };
 
 pub use article_card::{

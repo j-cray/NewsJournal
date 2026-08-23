@@ -2,8 +2,8 @@
 
 use chrono::{DateTime, Datelike, Duration, TimeZone, Timelike, Utc, Weekday};
 use newsjournal_core::color::{assign_color_for_slug, Color, CURATED_PALETTE};
-use newsjournal_core::models::{ArticleStage, Contact};
-use newsjournal_core::validation::{slugify, MAX_SLUG_LENGTH};
+use newsjournal_core::models::{ArticleStage, Contact, Task, TaskStatus};
+use newsjournal_core::validation::{slugify, validate_task_title, MAX_SLUG_LENGTH};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -410,6 +410,86 @@ pub struct ContactTaggingSectionViewModel {
     pub empty_state_message: Option<String>,
 }
 
+/// Presentation view model for a single task item within the Article Form checklist.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TaskChecklistItemViewModel {
+    /// Unique task ID.
+    pub id: Uuid,
+    /// Task title.
+    pub title: String,
+    /// Detailed notes (if any).
+    pub notes: Option<String>,
+    /// Task workflow status.
+    pub status: TaskStatus,
+    /// Whether the task is marked as Complete.
+    pub is_complete: bool,
+    /// User-visible status label (e.g. "To-Do", "In Progress", "Complete").
+    pub status_label: &'static str,
+    /// Status badge color hex code.
+    pub status_badge_color_hex: &'static str,
+    /// Formatted due date string (if set).
+    pub due_date_display: Option<String>,
+    /// Whether the due date is in the past and task is incomplete.
+    pub is_overdue: bool,
+    /// Whether this task is currently staged in draft (not yet persisted in DB).
+    pub is_staged: bool,
+}
+
+impl TaskChecklistItemViewModel {
+    /// Constructs a task checklist item view model from a [`Task`], reference time, and staged flag.
+    #[must_use]
+    pub fn new(task: &Task, now: DateTime<Utc>, is_staged: bool) -> Self {
+        let is_complete = task.status == TaskStatus::Complete;
+        let is_overdue = !is_complete && task.due_date.map(|due| now > due).unwrap_or(false);
+
+        let due_date_display = task.due_date.map(|due| due.format("%b %d, %Y").to_string());
+
+        let (status_label, status_badge_color_hex) = match task.status {
+            TaskStatus::ToDo => ("To-Do", "#64748B"),
+            TaskStatus::InProgress => ("In Progress", "#3B82F6"),
+            TaskStatus::Complete => ("Complete", "#10B981"),
+        };
+
+        Self {
+            id: task.id,
+            title: task.title.clone(),
+            notes: task.notes.clone(),
+            status: task.status,
+            is_complete,
+            status_label,
+            status_badge_color_hex,
+            due_date_display,
+            is_overdue,
+            is_staged,
+        }
+    }
+}
+
+/// Presentation view model for the Inline Task Management sub-section in the Article Form.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ArticleTasksSectionViewModel {
+    /// List of all tasks for this article in display order.
+    pub tasks: Vec<TaskChecklistItemViewModel>,
+    /// Total count of tasks.
+    pub total_count: usize,
+    /// Count of completed tasks.
+    pub completed_count: usize,
+    /// Completion percentage (0 to 100).
+    pub completion_percentage: u8,
+    /// Human-friendly progress summary (e.g. "3 of 5 completed (60%)").
+    pub progress_label: String,
+    /// Current text in the quick-add task input field.
+    pub quick_task_input: String,
+    /// Placeholder hint text for quick-add input.
+    pub quick_task_placeholder: &'static str,
+    /// Validation error for the quick-task input field (if any).
+    pub quick_task_error: Option<String>,
+    /// Whether the quick-task input is non-empty and valid.
+    pub is_quick_add_valid: bool,
+    /// Empty state guidance message if no tasks exist.
+    pub empty_state_message: Option<String>,
+}
+
 /// Comprehensive presentation model for all Article Form fields in the modal/drawer.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ArticleFormViewModel {
@@ -431,8 +511,12 @@ pub struct ArticleFormViewModel {
     pub color_picker: ArticleColorPickerViewModel,
     /// Contact tagging sub-section presentation model.
     pub contacts_section: ContactTaggingSectionViewModel,
+    /// Inline task management sub-section presentation model.
+    pub tasks_section: ArticleTasksSectionViewModel,
     /// Number of contacts tagged in this draft.
     pub tagged_contacts_count: usize,
+    /// Task completion counts `(completed_count, total_count)`.
+    pub task_stats: (usize, usize),
     /// Whether the form is currently submittable (valid format, unique slug, non-empty required fields).
     pub is_submittable: bool,
     /// Total count of validation errors.
@@ -824,7 +908,68 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         empty_state_message,
     };
 
-    // 8. Overall error calculation and submission status
+    // 8. Build Inline Task Management sub-section view model
+    let mut all_tasks = Vec::new();
+
+    // If editing an existing article, fetch tasks from state
+    if let Some(article_id) = draft.id {
+        for task in state.tasks_for_article(article_id) {
+            all_tasks.push(TaskChecklistItemViewModel::new(task, now, false));
+        }
+    }
+
+    // Add any staged tasks from the draft
+    for staged_task in &draft.staged_tasks {
+        all_tasks.push(TaskChecklistItemViewModel::new(staged_task, now, true));
+    }
+
+    let total_tasks_count = all_tasks.len();
+    let completed_tasks_count = all_tasks.iter().filter(|t| t.is_complete).count();
+    let completion_percentage = if total_tasks_count > 0 {
+        ((completed_tasks_count as f32 / total_tasks_count as f32) * 100.0).round() as u8
+    } else {
+        0
+    };
+
+    let progress_label = if total_tasks_count == 0 {
+        "No tasks yet".to_string()
+    } else {
+        format!(
+            "{completed_tasks_count} of {total_tasks_count} completed ({completion_percentage}%)"
+        )
+    };
+
+    let quick_input_clean = draft.quick_task_title.trim();
+    let quick_task_error = if quick_input_clean.is_empty() {
+        None
+    } else {
+        validate_task_title(quick_input_clean)
+            .err()
+            .map(|e| e.to_string())
+    };
+    let is_quick_add_valid = !quick_input_clean.is_empty() && quick_task_error.is_none();
+
+    let empty_tasks_message = if total_tasks_count == 0 {
+        Some("No tasks for this story yet. Type a task above to quick-add.".to_string())
+    } else {
+        None
+    };
+
+    let tasks_section = ArticleTasksSectionViewModel {
+        tasks: all_tasks,
+        total_count: total_tasks_count,
+        completed_count: completed_tasks_count,
+        completion_percentage,
+        progress_label,
+        quick_task_input: draft.quick_task_title.clone(),
+        quick_task_placeholder:
+            "Add a task for this story (e.g. Call city auditor, verify records)...",
+        quick_task_error,
+        is_quick_add_valid,
+        empty_state_message: empty_tasks_message,
+    };
+
+    // 9. Overall error calculation and submission status
     let mut total_errors = draft.validation_errors.len();
     if is_collision && !draft.validation_errors.contains_key("slug") {
         total_errors += 1;
@@ -851,7 +996,9 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         deadline_field,
         color_picker,
         contacts_section,
+        tasks_section,
         tagged_contacts_count: draft.tagged_contact_ids.len(),
+        task_stats: (completed_tasks_count, total_tasks_count),
         is_submittable,
         total_error_count: total_errors,
         error_summary,

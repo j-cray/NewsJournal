@@ -1,7 +1,8 @@
 //! Pure state transition reducer for the NewsJournal GUI.
 
 use chrono::Utc;
-use newsjournal_core::models::TaskStatus;
+use newsjournal_core::models::{Task, TaskStatus};
+use newsjournal_core::validation::validate_task_title;
 use uuid::Uuid;
 
 use crate::commands::AppCommand;
@@ -297,6 +298,97 @@ impl AppState {
                     Vec::new()
                 }
             }
+            AppMessage::SetArticleDraftQuickTask(title) => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.set_quick_task_title(&title);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                Vec::new()
+            }
+            AppMessage::AddArticleDraftQuickTask => {
+                if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    let clean_title = draft.quick_task_title.trim().to_string();
+                    if let Err(e) = validate_task_title(&clean_title) {
+                        return vec![AppCommand::EmitToast(ToastMessage::error(
+                            "Invalid Task Title",
+                            e.to_string(),
+                        ))];
+                    }
+
+                    if let Some(article_id) = draft.id {
+                        let task = Task::new(article_id, &clean_title);
+                        draft.clear_quick_task_title();
+                        self.modal = ModalState::ArticleForm(draft);
+
+                        if !self.tasks.iter().any(|t| t.id == task.id) {
+                            self.tasks.push(task.clone());
+                        }
+
+                        vec![
+                            AppCommand::SaveTask(task),
+                            AppCommand::EmitToast(ToastMessage::success(
+                                "Task Added",
+                                format!("Added '{clean_title}' to story"),
+                            )),
+                        ]
+                    } else {
+                        match draft.add_staged_task(&clean_title) {
+                            Ok(task) => {
+                                let title = task.title.clone();
+                                self.modal = ModalState::ArticleForm(draft);
+                                vec![AppCommand::EmitToast(ToastMessage::info(
+                                    "Task Staged",
+                                    format!("Added '{title}' (will be saved with story)"),
+                                ))]
+                            }
+                            Err(e) => {
+                                self.modal = ModalState::ArticleForm(draft);
+                                vec![AppCommand::EmitToast(ToastMessage::error(
+                                    "Invalid Task Title",
+                                    e,
+                                ))]
+                            }
+                        }
+                    }
+                } else {
+                    Vec::new()
+                }
+            }
+            AppMessage::ToggleArticleDraftTask(task_id) => {
+                let mut commands = Vec::new();
+                if let Some(task) = self.tasks.iter_mut().find(|t| t.id == task_id) {
+                    task.status = if task.status == TaskStatus::Complete {
+                        TaskStatus::ToDo
+                    } else {
+                        TaskStatus::Complete
+                    };
+                    task.updated_at = Utc::now();
+                    commands.push(AppCommand::SaveTask(task.clone()));
+                } else if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.toggle_staged_task(task_id);
+                    self.modal = ModalState::ArticleForm(draft);
+                }
+                commands
+            }
+            AppMessage::DeleteArticleDraftTask(task_id) => {
+                let mut commands = Vec::new();
+                if let Some(pos) = self.tasks.iter().position(|t| t.id == task_id) {
+                    let task = self.tasks.remove(pos);
+                    commands.push(AppCommand::DeleteTask(task_id));
+                    commands.push(AppCommand::EmitToast(ToastMessage::info(
+                        "Task Removed",
+                        format!("Deleted task '{}'", task.title),
+                    )));
+                } else if let ModalState::ArticleForm(mut draft) = self.modal.clone() {
+                    draft.remove_staged_task(task_id);
+                    self.modal = ModalState::ArticleForm(draft);
+                    commands.push(AppCommand::EmitToast(ToastMessage::info(
+                        "Task Removed",
+                        "Removed staged task from draft",
+                    )));
+                }
+                commands
+            }
             AppMessage::UpdateTaskDraft(draft) => {
                 self.modal = ModalState::TaskForm(draft);
                 Vec::new()
@@ -324,17 +416,28 @@ impl AppState {
                                     let tagged = draft.tagged_contact_ids.clone();
                                     let aid = article.id;
                                     let slug = article.slug.clone();
-                                    vec![
+                                    let mut commands = vec![
                                         AppCommand::SaveArticle(article),
                                         AppCommand::SetArticleContacts {
                                             article_id: aid,
                                             contact_ids: tagged,
                                         },
-                                        AppCommand::EmitToast(ToastMessage::success(
-                                            "Article Saved",
-                                            format!("Story '{slug}' saved successfully"),
-                                        )),
-                                    ]
+                                    ];
+
+                                    // Save any staged tasks
+                                    for mut staged_task in draft.staged_tasks {
+                                        staged_task.article_id = aid;
+                                        if !self.tasks.iter().any(|t| t.id == staged_task.id) {
+                                            self.tasks.push(staged_task.clone());
+                                        }
+                                        commands.push(AppCommand::SaveTask(staged_task));
+                                    }
+
+                                    commands.push(AppCommand::EmitToast(ToastMessage::success(
+                                        "Article Saved",
+                                        format!("Story '{slug}' saved successfully"),
+                                    )));
+                                    commands
                                 }
                                 Err(err) => {
                                     self.modal = ModalState::ArticleForm(draft);
