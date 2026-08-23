@@ -4,7 +4,9 @@ use newsjournal_core::models::ArticleStage;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::message::AppMessage;
 use crate::state::drag_drop::DropTarget;
+use crate::state::filters::UrgencyFilter;
 use crate::state::AppState;
 
 /// Default nominal column width in logical pixels.
@@ -376,6 +378,425 @@ pub use crate::views::article_card::{
     SUCCESS_GREEN_HEX,
 };
 
+/// Header view model for an individual article stage Kanban column.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct ArticleColumnHeaderViewModel {
+    /// Production stage.
+    pub stage: ArticleStage,
+    /// 0-based column index across the 6-stage deck (0..=5).
+    pub index: usize,
+    /// Column title.
+    pub title: &'static str,
+    /// Editorial description or guidance for this stage.
+    pub description: &'static str,
+    /// Emoji icon for the stage.
+    pub icon_emoji: &'static str,
+    /// Standard symbolic icon name.
+    pub icon_name: &'static str,
+    /// macOS SF Symbol identifier.
+    pub sf_symbol: &'static str,
+    /// Stage accent hex color for headers and accents.
+    pub accent_hex: &'static str,
+    /// Total card count in this column.
+    pub card_count: usize,
+    /// Formatted card count string (e.g. "0 stories", "1 story", "4 stories").
+    pub card_count_label: String,
+    /// Formatted compact badge label (e.g. "0", "1", "4").
+    pub count_badge_text: String,
+    /// Number of overdue cards in this column.
+    pub overdue_count: usize,
+    /// Overdue alert badge label if any cards are overdue (e.g. Some("⚠️ 1 Overdue")).
+    pub overdue_badge_label: Option<String>,
+    /// Number of due-soon cards in this column.
+    pub due_soon_count: usize,
+    /// Due soon warning badge label if any cards are due soon (e.g. Some("🕒 1 Due Soon")).
+    pub due_soon_badge_label: Option<String>,
+    /// Quick action button label (e.g. "+ Add Pitch", "+ Add Draft").
+    pub quick_add_label: &'static str,
+    /// Tooltip text for the quick action button.
+    pub quick_add_tooltip: String,
+    /// Message dispatched when clicking the column header quick add button.
+    pub quick_add_action: AppMessage,
+}
+
+impl ArticleColumnHeaderViewModel {
+    /// Formats card count into a human-readable story label.
+    #[must_use]
+    pub fn format_card_count_label(count: usize) -> String {
+        match count {
+            1 => "1 story".to_string(),
+            n => format!("{n} stories"),
+        }
+    }
+
+    /// Returns the quick-add button label for a given stage.
+    #[must_use]
+    pub const fn quick_add_label_for_stage(stage: ArticleStage) -> &'static str {
+        match stage {
+            ArticleStage::Pitching => "+ Add Pitch",
+            ArticleStage::Researching => "+ Add Research",
+            ArticleStage::Writing => "+ Add Draft",
+            ArticleStage::Editing => "+ Add Review",
+            ArticleStage::ReadyToPublish => "+ Add Story",
+            ArticleStage::Published => "+ Archive",
+        }
+    }
+
+    /// Constructs the column header view model.
+    #[must_use]
+    pub fn build(
+        stage: ArticleStage,
+        card_count: usize,
+        overdue_count: usize,
+        due_soon_count: usize,
+    ) -> Self {
+        let meta = stage_metadata(stage);
+        let card_count_label = Self::format_card_count_label(card_count);
+        let count_badge_text = card_count.to_string();
+        let overdue_badge_label = if overdue_count > 0 {
+            Some(format!("⚠️ {overdue_count} Overdue"))
+        } else {
+            None
+        };
+        let due_soon_badge_label = if due_soon_count > 0 {
+            Some(format!("🕒 {due_soon_count} Due Soon"))
+        } else {
+            None
+        };
+        let quick_add_label = Self::quick_add_label_for_stage(stage);
+        let quick_add_tooltip = format!("Create new article in {} stage", meta.title);
+        let quick_add_action = AppMessage::OpenNewArticleInStageModal(stage);
+
+        Self {
+            stage,
+            index: meta.index,
+            title: meta.title,
+            description: meta.description,
+            icon_emoji: meta.icon_emoji,
+            icon_name: meta.icon_name,
+            sf_symbol: meta.sf_symbol,
+            accent_hex: meta.accent_hex,
+            card_count,
+            card_count_label,
+            count_badge_text,
+            overdue_count,
+            overdue_badge_label,
+            due_soon_count,
+            due_soon_badge_label,
+            quick_add_label,
+            quick_add_tooltip,
+            quick_add_action,
+        }
+    }
+
+    /// Returns `true` if this column has any overdue cards.
+    #[must_use]
+    pub const fn has_overdue(&self) -> bool {
+        self.overdue_count > 0
+    }
+
+    /// Returns `true` if this column has any due-soon cards.
+    #[must_use]
+    pub const fn has_due_soon(&self) -> bool {
+        self.due_soon_count > 0
+    }
+}
+
+/// Stage-tailored empty state presentation model when a Kanban column has no cards.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct ColumnEmptyStateViewModel {
+    /// Production stage.
+    pub stage: ArticleStage,
+    /// Stage emoji icon.
+    pub icon_emoji: &'static str,
+    /// Standard icon name.
+    pub icon_name: &'static str,
+    /// macOS SF Symbol identifier.
+    pub sf_symbol: &'static str,
+    /// Stage accent hex color.
+    pub accent_hex: &'static str,
+    /// Empty state headline (e.g. "No Story Pitches", "No Drafts in Progress").
+    pub title: &'static str,
+    /// Empty state guidance prompt.
+    pub prompt: &'static str,
+    /// Action button label for quick creation (e.g. "+ New Pitch", "+ Start Draft").
+    pub action_button_label: &'static str,
+    /// Action message to dispatch upon clicking the empty state action button.
+    pub action_message: Option<AppMessage>,
+    /// Whether this column accepts dropped cards from other stages.
+    pub is_drop_target_hint: bool,
+    /// Drop guidance hint text (e.g. "Drag researched stories here to start drafting").
+    pub drop_hint_text: &'static str,
+    /// Whether this empty state is caused by active filtering/search rather than naturally having 0 stories.
+    pub is_filtered_empty: bool,
+    /// Contextual explanation if empty due to active filter.
+    pub filtered_explanation: Option<String>,
+}
+
+impl ColumnEmptyStateViewModel {
+    /// Returns the headline for a stage's empty state.
+    #[must_use]
+    pub const fn title_for_stage(stage: ArticleStage) -> &'static str {
+        match stage {
+            ArticleStage::Pitching => "No Story Pitches",
+            ArticleStage::Researching => "No Articles in Research",
+            ArticleStage::Writing => "No Drafts in Progress",
+            ArticleStage::Editing => "No Articles in Review",
+            ArticleStage::ReadyToPublish => "No Stories Queued",
+            ArticleStage::Published => "No Published Stories",
+        }
+    }
+
+    /// Returns the action button label for a stage's empty state.
+    #[must_use]
+    pub const fn action_label_for_stage(stage: ArticleStage) -> &'static str {
+        match stage {
+            ArticleStage::Pitching => "+ New Pitch",
+            ArticleStage::Researching => "+ Add Research",
+            ArticleStage::Writing => "+ Start Draft",
+            ArticleStage::Editing => "+ Add to Review",
+            ArticleStage::ReadyToPublish => "+ Queue Story",
+            ArticleStage::Published => "+ Archive Story",
+        }
+    }
+
+    /// Returns the drop guidance hint text for a stage's empty state.
+    #[must_use]
+    pub const fn drop_hint_for_stage(stage: ArticleStage) -> &'static str {
+        match stage {
+            ArticleStage::Pitching => "Pitches can also be dragged from other stages",
+            ArticleStage::Researching => "Drag approved pitches here to begin research",
+            ArticleStage::Writing => "Drag researched stories here to start drafting",
+            ArticleStage::Editing => "Drag completed drafts here for review & fact-checking",
+            ArticleStage::ReadyToPublish => "Drag approved stories here for publication sign-off",
+            ArticleStage::Published => "Drag live stories here to archive them",
+        }
+    }
+
+    /// Constructs the stage-tailored empty state view model.
+    #[must_use]
+    pub fn build(stage: ArticleStage, is_filtered: bool, search_query: &str) -> Self {
+        let meta = stage_metadata(stage);
+        let title = Self::title_for_stage(stage);
+        let prompt = meta.empty_state_prompt;
+        let action_button_label = Self::action_label_for_stage(stage);
+        let action_message = Some(AppMessage::OpenNewArticleInStageModal(stage));
+        let is_drop_target_hint = true;
+        let drop_hint_text = Self::drop_hint_for_stage(stage);
+        let filtered_explanation = if is_filtered {
+            if !search_query.trim().is_empty() {
+                Some(format!(
+                    "No stories in {} match \"{}\"",
+                    meta.title,
+                    search_query.trim()
+                ))
+            } else {
+                Some(format!("No stories in {} match active filters", meta.title))
+            }
+        } else {
+            None
+        };
+
+        Self {
+            stage,
+            icon_emoji: meta.icon_emoji,
+            icon_name: meta.icon_name,
+            sf_symbol: meta.sf_symbol,
+            accent_hex: meta.accent_hex,
+            title,
+            prompt,
+            action_button_label,
+            action_message,
+            is_drop_target_hint,
+            drop_hint_text,
+            is_filtered_empty: is_filtered,
+            filtered_explanation,
+        }
+    }
+}
+
+/// Top toolbar presentation model for the Articles Kanban deck view.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct KanbanToolbarViewModel {
+    /// Section title.
+    pub title: &'static str,
+    /// Total article count across all columns.
+    pub total_article_count: usize,
+    /// Formatted total stories label (e.g. "8 total stories", "0 stories").
+    pub total_count_label: String,
+    /// Total overdue stories count.
+    pub total_overdue_count: usize,
+    /// Overdue alert badge label if any stories are overdue (e.g. Some("⚠️ 2 Overdue")).
+    pub overdue_badge_label: Option<String>,
+    /// Total due-soon stories count.
+    pub total_due_soon_count: usize,
+    /// Due soon warning badge label if any stories are due soon.
+    pub due_soon_badge_label: Option<String>,
+    /// Primary quick action button label (e.g. "+ New Article").
+    pub primary_action_label: &'static str,
+    /// Primary quick action button tooltip.
+    pub primary_action_tooltip: &'static str,
+    /// Primary action keyboard shortcut display string (e.g. "⌘N" or "Ctrl+N").
+    pub primary_action_shortcut: &'static str,
+    /// Message dispatched when clicking the primary action button.
+    pub primary_action_message: AppMessage,
+    /// Current search query string.
+    pub search_query: String,
+    /// Whether search is actively filtering.
+    pub is_search_active: bool,
+    /// Active urgency filter.
+    pub urgency_filter: UrgencyFilter,
+    /// Active stage filter if filtering to single stage.
+    pub selected_stage_filter: Option<ArticleStage>,
+    /// Whether any filter is currently applied.
+    pub is_filtered: bool,
+}
+
+impl KanbanToolbarViewModel {
+    /// Formats total article count into a header label.
+    #[must_use]
+    pub fn format_total_count_label(count: usize) -> String {
+        match count {
+            0 => "0 stories".to_string(),
+            1 => "1 story".to_string(),
+            n => format!("{n} total stories"),
+        }
+    }
+
+    /// Constructs the toolbar presentation model from state and deck counts.
+    #[must_use]
+    pub fn build(
+        state: &AppState,
+        total_article_count: usize,
+        total_overdue_count: usize,
+        total_due_soon_count: usize,
+    ) -> Self {
+        let total_count_label = Self::format_total_count_label(total_article_count);
+        let overdue_badge_label = if total_overdue_count > 0 {
+            Some(format!("⚠️ {total_overdue_count} Overdue"))
+        } else {
+            None
+        };
+        let due_soon_badge_label = if total_due_soon_count > 0 {
+            Some(format!("🕒 {total_due_soon_count} Due Soon"))
+        } else {
+            None
+        };
+        let search_query = state.filters.search_query.clone();
+        let is_search_active = !search_query.trim().is_empty();
+        let urgency_filter = state.filters.urgency_filter;
+        let selected_stage_filter = state.filters.selected_stage;
+        let is_filtered = state.filters.is_active();
+
+        Self {
+            title: "Articles Kanban",
+            total_article_count,
+            total_count_label,
+            total_overdue_count,
+            overdue_badge_label,
+            total_due_soon_count,
+            due_soon_badge_label,
+            primary_action_label: "+ New Article",
+            primary_action_tooltip: "Create a new article pitch (⌘N / Ctrl+N)",
+            primary_action_shortcut: "⌘N",
+            primary_action_message: AppMessage::OpenNewArticleModal,
+            search_query,
+            is_search_active,
+            urgency_filter,
+            selected_stage_filter,
+            is_filtered,
+        }
+    }
+
+    /// Returns `true` if any stories in the deck are overdue.
+    #[must_use]
+    pub const fn has_overdue(&self) -> bool {
+        self.total_overdue_count > 0
+    }
+
+    /// Returns `true` if any stories in the deck are due soon.
+    #[must_use]
+    pub const fn has_due_soon(&self) -> bool {
+        self.total_due_soon_count > 0
+    }
+}
+
+/// Deck-wide empty state presentation model when no articles exist in the deck.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct DeckEmptyStateViewModel {
+    /// Large headline text.
+    pub headline: String,
+    /// Explanatory guidance text.
+    pub subtext: String,
+    /// Primary call to action button label.
+    pub action_button_label: String,
+    /// Primary action message.
+    pub action_message: AppMessage,
+    /// Secondary action button label (if any, e.g. "Clear Filters").
+    pub secondary_action_label: Option<String>,
+    /// Secondary action message (if any).
+    pub secondary_action_message: Option<AppMessage>,
+    /// Whether this empty state is caused by active filtering.
+    pub is_filtered: bool,
+    /// Standard symbolic icon name.
+    pub icon_name: &'static str,
+    /// macOS SF Symbol identifier.
+    pub sf_symbol: &'static str,
+    /// Emoji representation.
+    pub icon_emoji: &'static str,
+}
+
+impl DeckEmptyStateViewModel {
+    /// Constructs a deck empty state view model if total article count is 0.
+    #[must_use]
+    pub fn build(
+        total_article_count: usize,
+        is_filtered: bool,
+        search_query: &str,
+    ) -> Option<Self> {
+        if total_article_count > 0 {
+            return None;
+        }
+
+        if is_filtered {
+            let subtext = if !search_query.trim().is_empty() {
+                format!(
+                    "No stories found matching \"{}\". Try adjusting your search query or clear all filters.",
+                    search_query.trim()
+                )
+            } else {
+                "No stories found matching the active stage or urgency filters.".to_string()
+            };
+
+            Some(Self {
+                headline: "No Matching Articles".to_string(),
+                subtext,
+                action_button_label: "Clear Filters".to_string(),
+                action_message: AppMessage::ClearFilters,
+                secondary_action_label: Some("+ New Article".to_string()),
+                secondary_action_message: Some(AppMessage::OpenNewArticleModal),
+                is_filtered: true,
+                icon_name: "search",
+                sf_symbol: "magnifyingglass",
+                icon_emoji: "🔍",
+            })
+        } else {
+            Some(Self {
+                headline: "Welcome to Articles Kanban".to_string(),
+                subtext: "Track your newsroom reporting pipeline from Pitching to Publication. Get started by creating your first article pitch.".to_string(),
+                action_button_label: "+ Create Your First Article".to_string(),
+                action_message: AppMessage::OpenNewArticleModal,
+                secondary_action_label: None,
+                secondary_action_message: None,
+                is_filtered: false,
+                icon_name: "newspaper",
+                sf_symbol: "doc.richtext",
+                icon_emoji: "📰",
+            })
+        }
+    }
+}
+
 /// Formatted view model for one of the 6 production stage Kanban columns.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ArticleColumnViewModel {
@@ -395,6 +816,8 @@ pub struct ArticleColumnViewModel {
     pub sf_symbol: &'static str,
     /// Stage accent hex color for headers and accents.
     pub accent_hex: &'static str,
+    /// Column header presentation model with counts and quick action button.
+    pub header: ArticleColumnHeaderViewModel,
     /// List of cards in this column.
     pub cards: Vec<ArticleCardViewModel>,
     /// Total card count in this column.
@@ -419,11 +842,15 @@ pub struct ArticleColumnViewModel {
     pub is_empty: bool,
     /// Stage-specific empty state guidance message.
     pub empty_state_prompt: &'static str,
+    /// Stage-specific empty state model when card_count == 0.
+    pub empty_state: Option<ColumnEmptyStateViewModel>,
 }
 
 /// Formatted view model for the entire Articles Kanban Deck (6 columns, horizontal scrolling, drag ghost).
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ArticlesKanbanDeckViewModel {
+    /// Top toolbar presentation model with metrics and '+ New Article' trigger.
+    pub toolbar: KanbanToolbarViewModel,
     /// The 6 production stage columns in sequential workflow order.
     pub columns: Vec<ArticleColumnViewModel>,
     /// Total number of articles across all 6 columns.
@@ -438,6 +865,8 @@ pub struct ArticlesKanbanDeckViewModel {
     pub search_query: String,
     /// Active stage filter if filtering to a single stage.
     pub selected_stage_filter: Option<ArticleStage>,
+    /// Deck-wide empty state if total_article_count == 0.
+    pub deck_empty_state: Option<DeckEmptyStateViewModel>,
     /// Active card currently being dragged, if any.
     pub active_drag_item: Option<crate::state::drag_drop::DragItem>,
     /// Whether a drag-and-drop session is currently active.
@@ -616,6 +1045,9 @@ pub fn build_articles_kanban_deck_with_layout(
     let is_valid_drop = state.drag.is_valid_drop();
 
     let filtered_articles = state.filtered_articles();
+    let is_filtered = state.filters.is_active();
+    let search_query = state.filters.search_query.clone();
+    let selected_stage_filter = state.filters.selected_stage;
 
     let mut total_article_count = 0;
     let mut total_overdue_count = 0;
@@ -647,6 +1079,23 @@ pub fn build_articles_kanban_deck_with_layout(
             let overdue_count = cards.iter().filter(|c| c.is_overdue).count();
             let due_soon_count = cards.iter().filter(|c| c.is_due_soon).count();
             total_article_count += card_count;
+
+            let is_empty = card_count == 0;
+            let header = ArticleColumnHeaderViewModel::build(
+                stage,
+                card_count,
+                overdue_count,
+                due_soon_count,
+            );
+            let empty_state = if is_empty {
+                Some(ColumnEmptyStateViewModel::build(
+                    stage,
+                    is_filtered,
+                    &search_query,
+                ))
+            } else {
+                None
+            };
 
             let is_hovered = hover_stage == Some(stage);
             let (
@@ -707,6 +1156,7 @@ pub fn build_articles_kanban_deck_with_layout(
                 icon_name: meta.icon_name,
                 sf_symbol: meta.sf_symbol,
                 accent_hex: meta.accent_hex,
+                header,
                 card_count,
                 overdue_count,
                 due_soon_count,
@@ -717,17 +1167,24 @@ pub fn build_articles_kanban_deck_with_layout(
                 drop_placeholder,
                 drop_highlight_border_hex,
                 drop_highlight_bg_tint_hex,
-                is_empty: card_count == 0,
+                is_empty,
                 empty_state_prompt: meta.empty_state_prompt,
+                empty_state,
             }
         })
         .collect();
 
-    let is_filtered = state.filters.is_active();
-    let search_query = state.filters.search_query.clone();
-    let selected_stage_filter = state.filters.selected_stage;
+    let toolbar = KanbanToolbarViewModel::build(
+        state,
+        total_article_count,
+        total_overdue_count,
+        total_due_soon_count,
+    );
+    let deck_empty_state =
+        DeckEmptyStateViewModel::build(total_article_count, is_filtered, &search_query);
 
     ArticlesKanbanDeckViewModel {
+        toolbar,
         columns,
         total_article_count,
         total_overdue_count,
@@ -735,6 +1192,7 @@ pub fn build_articles_kanban_deck_with_layout(
         is_filtered,
         search_query,
         selected_stage_filter,
+        deck_empty_state,
         active_drag_item,
         is_dragging,
         hover_target: state.drag.hover_target,

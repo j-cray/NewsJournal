@@ -33,6 +33,8 @@ pub enum AppMessage {
     // ==========================================
     /// Opens the modal to create a brand new article.
     OpenNewArticleModal,
+    /// Opens the modal to create a brand new article pre-populated with a specific production stage.
+    OpenNewArticleInStageModal(ArticleStage),
     /// Opens the drawer to edit an existing article by ID.
     OpenEditArticleModal(Uuid),
     /// Opens the drawer to create a new task, optionally associated with an article.

@@ -53,6 +53,14 @@ impl AppState {
                 self.modal = ModalState::ArticleForm(draft);
                 Vec::new()
             }
+            AppMessage::OpenNewArticleInStageModal(stage) => {
+                let mut draft = ArticleDraft::new();
+                draft.stage = stage;
+                let default_color = assign_color_for_slug("new-article");
+                draft.color_hex = default_color.to_hex();
+                self.modal = ModalState::ArticleForm(draft);
+                Vec::new()
+            }
             AppMessage::OpenEditArticleModal(id) => {
                 if let Some(article) = self.get_article(id) {
                     let tagged_ids = self.article_contacts.get(&id).cloned().unwrap_or_default();
