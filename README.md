@@ -189,6 +189,30 @@ engine.set_mode(ThemeMode::Light);
 assert_eq!(engine.resolved(), ResolvedTheme::Light);
 ```
 
+### 8. Left Navigation Bar & Keyboard Shortcuts
+
+```rust
+use newsjournal_gui::navigation::{resolve_nav_shortcut, NavKeyAction, NavKeyModifiers, NavTab};
+use newsjournal_gui::views::build_nav_bar_view;
+use newsjournal_gui::{AppMessage, AppState, EventLoop};
+
+let state = AppState::in_memory()?;
+let mut event_loop = EventLoop::new(state);
+
+// Build view model with active highlighting, badge metrics, and overdue indicators
+let nav_bar = build_nav_bar_view(event_loop.state());
+assert_eq!(nav_bar.active_tab, NavTab::ArticlesKanban);
+assert_eq!(nav_bar.main_items.len(), 3); // Articles, Tasks, Contacts
+assert_eq!(nav_bar.docked_items.len(), 1); // Settings docked at bottom
+
+// Keyboard shortcuts (e.g. Ctrl+1..4 on Linux, ⌘1..4 on macOS, or Arrow Down / Tab cycling)
+let linux_ctrl = NavKeyModifiers::ctrl_or_meta(true, false);
+if let Some(action) = resolve_nav_shortcut("2", linux_ctrl, false) {
+    event_loop.dispatch(AppMessage::HandleNavKeyAction(action))?;
+}
+assert_eq!(event_loop.state().active_tab, NavTab::TasksKanban);
+```
+
 ---
 
 

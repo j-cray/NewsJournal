@@ -66,7 +66,7 @@ Based on the architectural alignment and design interview:
 - [x] **3.4 Theme Engine Integration**: Connect GUI to system theme detector, handling dynamic switching between `System`, `Light`, and `Dark`.
 
 ### Phase 4: Left Vertical Navigation Bar & Settings View
-- [ ] **4.1 Left Navigation Bar Component**:
+- [x] **4.1 Left Navigation Bar Component**:
   - Vertical icon + label buttons for:
     1. 📰 Articles Kanban (Main Deck)
     2. ✅ Tasks Kanban
