@@ -199,6 +199,7 @@ impl AppState {
                     ModalState::SettingsDrawer(draft) => {
                         let settings = draft.to_settings();
                         self.settings = settings.clone();
+                        self.theme_engine.set_mode(settings.theme_mode);
                         vec![
                             AppCommand::SaveSettings(settings),
                             AppCommand::EmitToast(ToastMessage::success(
@@ -352,11 +353,30 @@ impl AppState {
             }
             AppMessage::SaveSettings(settings) => {
                 self.settings = settings.clone();
+                self.theme_engine.set_mode(settings.theme_mode);
                 vec![AppCommand::SaveSettings(settings)]
             }
             AppMessage::SetThemeMode(theme_mode) => {
                 self.settings.theme_mode = theme_mode;
+                self.theme_engine.set_mode(theme_mode);
                 vec![AppCommand::SaveSettings(self.settings.clone())]
+            }
+            AppMessage::ToggleTheme => {
+                let next_mode = self.theme_engine.toggle_mode();
+                self.settings.theme_mode = next_mode;
+                vec![AppCommand::SaveSettings(self.settings.clone())]
+            }
+            AppMessage::SystemThemeChanged(is_dark) => {
+                self.theme_engine.set_system_is_dark(is_dark);
+                Vec::new()
+            }
+            AppMessage::SetHighContrast(high_contrast) => {
+                self.theme_engine.set_high_contrast(high_contrast);
+                Vec::new()
+            }
+            AppMessage::SetCustomAccent(accent) => {
+                self.theme_engine.set_custom_accent(accent);
+                Vec::new()
             }
 
             // ==========================================
@@ -459,5 +479,50 @@ impl AppState {
             }
             AppMessage::WindowResized { .. } => Vec::new(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::theme::ResolvedTheme;
+    use newsjournal_core::models::ThemeMode;
+
+    #[test]
+    fn test_theme_mode_reducer_actions() {
+        let mut state = AppState::in_memory().expect("in-memory state");
+        assert_eq!(state.settings.theme_mode, ThemeMode::System);
+        assert_eq!(state.resolved_theme(), ResolvedTheme::Dark);
+
+        // Set explicit Light mode
+        let commands = state.update(AppMessage::SetThemeMode(ThemeMode::Light));
+        assert_eq!(commands.len(), 1);
+        assert_eq!(state.settings.theme_mode, ThemeMode::Light);
+        assert_eq!(state.resolved_theme(), ResolvedTheme::Light);
+
+        // Toggle theme (Light -> Dark)
+        let commands = state.update(AppMessage::ToggleTheme);
+        assert_eq!(commands.len(), 1);
+        assert_eq!(state.settings.theme_mode, ThemeMode::Dark);
+        assert_eq!(state.resolved_theme(), ResolvedTheme::Dark);
+
+        // Set to System mode
+        state.update(AppMessage::SetThemeMode(ThemeMode::System));
+        assert_eq!(state.settings.theme_mode, ThemeMode::System);
+
+        // OS changes to Light appearance
+        let commands = state.update(AppMessage::SystemThemeChanged(false));
+        assert!(commands.is_empty());
+        assert_eq!(state.settings.theme_mode, ThemeMode::System);
+        assert_eq!(state.resolved_theme(), ResolvedTheme::Light);
+
+        // High contrast toggle
+        state.update(AppMessage::SetHighContrast(true));
+        assert!(state.theme_engine.high_contrast);
+
+        // Custom accent
+        let orange = (248, 152, 32);
+        state.update(AppMessage::SetCustomAccent(Some(orange)));
+        assert_eq!(state.theme_engine.colors().accent, orange);
     }
 }

@@ -113,6 +113,14 @@ pub enum AppMessage {
     SaveSettings(Settings),
     /// Updates the theme mode.
     SetThemeMode(ThemeMode),
+    /// Toggles active theme mode between light and dark.
+    ToggleTheme,
+    /// System appearance change notification (is_dark).
+    SystemThemeChanged(bool),
+    /// Updates high contrast accessibility preference.
+    SetHighContrast(bool),
+    /// Updates custom brand accent color override (RGB).
+    SetCustomAccent(Option<(u8, u8, u8)>),
 
     // ==========================================
     // Drag & Drop Interactions

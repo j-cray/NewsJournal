@@ -19,6 +19,7 @@ pub use modal::{ArticleDraft, ContactDraft, ModalState, SettingsDraft, TaskDraft
 pub use toast::{ToastKind, ToastMessage};
 
 use crate::navigation::NavTab;
+use crate::theme::{AppTheme, ResolvedTheme, ThemeEngine};
 
 /// Unified in-memory state tree powering the NewsJournal user interface.
 #[derive(Debug, Clone)]
@@ -39,6 +40,8 @@ pub struct AppState {
     pub contact_articles: HashMap<Uuid, Vec<Uuid>>,
     /// User settings (theme mode, etc.).
     pub settings: Settings,
+    /// Unified dynamic theme engine.
+    pub theme_engine: ThemeEngine,
     /// Active modal / slide-over drawer overlay state.
     pub modal: ModalState,
     /// Active card drag-and-drop session state.
@@ -62,6 +65,8 @@ impl AppState {
     #[must_use]
     pub fn new(storage: StorageService) -> Self {
         let now = Utc::now();
+        let settings = Settings::default();
+        let theme_engine = ThemeEngine::new(settings.theme_mode, true);
         Self {
             storage,
             active_tab: NavTab::ArticlesKanban,
@@ -70,7 +75,8 @@ impl AppState {
             contacts: Vec::new(),
             article_contacts: HashMap::new(),
             contact_articles: HashMap::new(),
-            settings: Settings::default(),
+            settings,
+            theme_engine,
             modal: ModalState::None,
             drag: DragState::new(),
             filters: FilterState::new(),
@@ -113,6 +119,7 @@ impl AppState {
             article_contacts.insert(article.id, contact_ids);
         }
 
+        self.theme_engine.set_mode(settings.theme_mode);
         self.articles = articles;
         self.tasks = tasks;
         self.contacts = contacts;
@@ -123,6 +130,24 @@ impl AppState {
 
         self.recalculate_deadlines(Utc::now());
         Ok(())
+    }
+
+    /// Returns a reference to the active resolved theme.
+    #[must_use]
+    pub fn theme(&self) -> &AppTheme {
+        self.theme_engine.theme()
+    }
+
+    /// Returns the active resolved theme variant (`Light` or `Dark`).
+    #[must_use]
+    pub fn resolved_theme(&self) -> ResolvedTheme {
+        self.theme_engine.resolved()
+    }
+
+    /// Returns whether the resolved theme is dark.
+    #[must_use]
+    pub fn is_dark(&self) -> bool {
+        self.theme_engine.is_dark()
     }
 
     /// Recalculates deadline urgency summaries for all articles.

@@ -1,5 +1,11 @@
 //! Glass styling tokens, color definitions, and theme resolution for NewsJournal.
 
+pub mod detector;
+pub mod engine;
+
+pub use detector::{DetectionStrategy, SystemThemeDetector, SystemThemeWatcher};
+pub use engine::ThemeEngine;
+
 use newsjournal_core::models::ThemeMode;
 use serde::{Deserialize, Serialize};
 

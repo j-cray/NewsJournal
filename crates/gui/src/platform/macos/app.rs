@@ -12,6 +12,7 @@ use crate::platform::macos::vibrancy::MacosVibrancyConfig;
 use crate::platform::macos::window::MacosWindowConfig;
 use crate::runtime::EventLoop;
 use crate::state::AppState;
+use crate::theme::detector::{SystemThemeDetector, SystemThemeWatcher};
 use crate::theme::ResolvedTheme;
 use crate::views::{
     build_articles_kanban_view, build_contacts_view, build_modal_view, build_nav_view_models,
@@ -75,6 +76,8 @@ pub struct MacosApp {
     pub config: MacosAppConfig,
     /// macOS unified toolbar component state.
     pub toolbar: MacosToolbar,
+    /// Background system appearance watcher.
+    pub theme_watcher: SystemThemeWatcher,
     /// Deadline tick interval in seconds (default 60 seconds).
     pub tick_interval_secs: u64,
 }
@@ -90,16 +93,18 @@ impl MacosApp {
     #[must_use]
     pub fn with_config(state: AppState, config: MacosAppConfig) -> Self {
         let overdue_count = state.deadline_summary.overdue_count;
-        let is_dark = config.theme_adapter.to_app_theme().resolved == ResolvedTheme::Dark;
+        let is_dark = state.theme().resolved == ResolvedTheme::Dark;
         let active_tab = state.active_tab;
 
         let toolbar = MacosToolbar::new(active_tab, overdue_count, is_dark);
         let event_loop = EventLoop::new(state);
+        let theme_watcher = SystemThemeWatcher::new(SystemThemeDetector::new());
 
         Self {
             event_loop,
             config,
             toolbar,
+            theme_watcher,
             tick_interval_secs: 60,
         }
     }
@@ -122,8 +127,11 @@ impl MacosApp {
         Ok(())
     }
 
-    /// Periodic background tick event (re-evaluates deadlines and overdue status).
+    /// Periodic background tick event (re-evaluates deadlines and system appearance changes).
     pub fn tick(&mut self) -> Result<(), StorageError> {
+        if let Some(is_dark) = self.theme_watcher.check_for_change() {
+            self.dispatch(AppMessage::SystemThemeChanged(is_dark))?;
+        }
         self.dispatch(AppMessage::Tick(chrono::Utc::now()))?;
         Ok(())
     }
@@ -158,14 +166,7 @@ impl MacosApp {
                 self.dispatch(AppMessage::SetSearchQuery(String::new()))?;
             }
             MacosToolbarAction::ToggleTheme => {
-                let current_is_dark =
-                    self.config.theme_adapter.to_app_theme().resolved == ResolvedTheme::Dark;
-                let next_mode = if current_is_dark {
-                    MacosAppearanceMode::Aqua
-                } else {
-                    MacosAppearanceMode::DarkAqua
-                };
-                self.set_appearance(next_mode)?;
+                self.dispatch(AppMessage::ToggleTheme)?;
             }
             MacosToolbarAction::ToggleSidebar => {
                 // Handled in UI layout for compact mode
@@ -179,9 +180,15 @@ impl MacosApp {
         let state = self.event_loop.state();
         let active_tab = state.active_tab;
         let overdue_count = state.deadline_summary.overdue_count;
-        let app_theme = self.config.theme_adapter.to_app_theme();
+        let app_theme = state.theme();
         let is_dark = app_theme.resolved == ResolvedTheme::Dark;
 
+        self.config.theme_adapter.appearance = match state.settings.theme_mode {
+            newsjournal_core::models::ThemeMode::System => MacosAppearanceMode::System,
+            newsjournal_core::models::ThemeMode::Light => MacosAppearanceMode::Aqua,
+            newsjournal_core::models::ThemeMode::Dark => MacosAppearanceMode::DarkAqua,
+        };
+        self.config.theme_adapter.system_is_dark = state.theme_engine.system_is_dark;
         self.toolbar = MacosToolbar::new(active_tab, overdue_count, is_dark);
     }
 
@@ -189,7 +196,7 @@ impl MacosApp {
     #[must_use]
     pub fn build_view_tree(&self) -> MacosViewTreeDescriptor {
         let state = self.event_loop.state();
-        let app_theme = self.config.theme_adapter.to_app_theme();
+        let app_theme = state.theme();
         let glass = &self.config.liquid_glass;
 
         let window_title = self
@@ -197,8 +204,8 @@ impl MacosApp {
             .window
             .format_window_title(state.active_tab, state.deadline_summary.overdue_count);
 
-        let toolbar_glass_style = glass.style_for(MacosContainerClass::Toolbar, &app_theme);
-        let sidebar_glass_style = glass.style_for(MacosContainerClass::Sidebar, &app_theme);
+        let toolbar_glass_style = glass.style_for(MacosContainerClass::Toolbar, app_theme);
+        let sidebar_glass_style = glass.style_for(MacosContainerClass::Sidebar, app_theme);
 
         let nav_items = build_nav_view_models(state);
 
@@ -229,7 +236,7 @@ impl MacosApp {
         let (modal_view, modal_glass_style) = if state.modal.is_open() {
             (
                 Some(build_modal_view(state)),
-                Some(glass.style_for(MacosContainerClass::ModalDrawer, &app_theme)),
+                Some(glass.style_for(MacosContainerClass::ModalDrawer, app_theme)),
             )
         } else {
             (None, None)
@@ -305,14 +312,42 @@ mod tests {
     fn test_macos_app_theme_toggle() {
         let state = AppState::in_memory().expect("in-memory state");
         let mut app = MacosApp::new(state);
+        assert_eq!(app.state().resolved_theme(), ResolvedTheme::Dark);
 
         app.handle_toolbar_action(MacosToolbarAction::ToggleTheme)
             .expect("toggle theme");
 
+        assert_eq!(app.state().resolved_theme(), ResolvedTheme::Light);
         assert_eq!(
-            app.config.theme_adapter.appearance,
-            MacosAppearanceMode::Aqua
+            app.state().settings.theme_mode,
+            newsjournal_core::models::ThemeMode::Light
         );
+
+        let tree = app.build_view_tree();
+        assert_eq!(tree.toolbar.theme_toggle_tooltip, "Switch to Dark Mode");
+    }
+
+    #[test]
+    fn test_macos_app_dynamic_system_theme_tick() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::Arc;
+
+        let flag = Arc::new(AtomicBool::new(true));
+        let flag_clone = Arc::clone(&flag);
+
+        let detector =
+            SystemThemeDetector::with_custom(move || Some(flag_clone.load(Ordering::SeqCst)));
+        let state = AppState::in_memory().expect("in-memory state");
+        let mut app = MacosApp::new(state);
+        app.theme_watcher = SystemThemeWatcher::new(detector);
+
+        assert_eq!(app.state().resolved_theme(), ResolvedTheme::Dark);
+
+        // System shifts to Light appearance
+        flag.store(false, Ordering::SeqCst);
+        app.tick().expect("tick successful");
+
+        assert_eq!(app.state().resolved_theme(), ResolvedTheme::Light);
     }
 
     #[test]
