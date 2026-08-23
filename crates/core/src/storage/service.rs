@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::models::{
@@ -17,6 +18,19 @@ use crate::storage::error::StorageError;
 use crate::storage::paths::AppPaths;
 use crate::storage::settings;
 use crate::storage::tasks;
+
+/// Summary metrics of entities stored in the SQLite database.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct DatabaseEntityCounts {
+    /// Total number of stored articles.
+    pub total_articles: usize,
+    /// Total number of stored tasks.
+    pub total_tasks: usize,
+    /// Total number of stored contacts.
+    pub total_contacts: usize,
+    /// Total number of article-contact links.
+    pub total_article_contacts: usize,
+}
 
 /// Thread-safe storage service providing unified CRUD and relational repository operations.
 ///
@@ -40,6 +54,7 @@ use crate::storage::tasks;
 #[derive(Debug, Clone)]
 pub struct StorageService {
     conn: Arc<Mutex<Connection>>,
+    db_path: Option<PathBuf>,
 }
 
 impl StorageService {
@@ -48,6 +63,7 @@ impl StorageService {
     pub fn new(conn: Connection) -> Self {
         Self {
             conn: Arc::new(Mutex::new(conn)),
+            db_path: None,
         }
     }
 
@@ -59,8 +75,12 @@ impl StorageService {
 
     /// Opens a file-backed SQLite database at the specified path, applies migrations, and returns the service.
     pub fn open(path: impl AsRef<Path>) -> Result<Self, StorageError> {
-        let conn = open_file(path)?;
-        Ok(Self::new(conn))
+        let path_buf = path.as_ref().to_path_buf();
+        let conn = open_file(&path_buf)?;
+        Ok(Self {
+            conn: Arc::new(Mutex::new(conn)),
+            db_path: Some(path_buf),
+        })
     }
 
     /// Opens the default application SQLite database based on standard OS directory conventions
@@ -91,7 +111,80 @@ impl StorageService {
     /// Creates a `StorageService` from an existing shared `Arc<Mutex<Connection>>`.
     #[must_use]
     pub fn with_shared(conn: Arc<Mutex<Connection>>) -> Self {
-        Self { conn }
+        Self {
+            conn,
+            db_path: None,
+        }
+    }
+
+    /// Creates a `StorageService` from an existing shared `Arc<Mutex<Connection>>` with an explicit database path.
+    #[must_use]
+    pub fn with_shared_and_path(conn: Arc<Mutex<Connection>>, db_path: Option<PathBuf>) -> Self {
+        Self { conn, db_path }
+    }
+
+    /// Returns the path to the database file if file-backed, or `None` if in-memory.
+    #[must_use]
+    pub fn database_path(&self) -> Option<&Path> {
+        self.db_path.as_deref()
+    }
+
+    /// Returns whether this storage service is backed by an in-memory database.
+    #[must_use]
+    pub fn is_in_memory(&self) -> bool {
+        self.db_path.is_none()
+    }
+
+    /// Returns the size of the database file on disk in bytes, or `None` if in-memory or file does not exist.
+    pub fn database_file_size(&self) -> Result<Option<u64>, StorageError> {
+        if let Some(path) = &self.db_path {
+            match std::fs::metadata(path) {
+                Ok(metadata) => Ok(Some(metadata.len())),
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+                Err(e) => Err(StorageError::Io(e)),
+            }
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Returns the current schema migration version applied to the database.
+    pub fn current_schema_version(&self) -> Result<Option<i64>, StorageError> {
+        let conn = self.lock()?;
+        let runner = crate::storage::migration::MigrationRunner::new();
+        runner.current_version(&conn)
+    }
+
+    /// Returns the total count of applied schema migrations.
+    pub fn applied_migrations_count(&self) -> Result<usize, StorageError> {
+        let conn = self.lock()?;
+        let runner = crate::storage::migration::MigrationRunner::new();
+        let applied = runner.applied_migrations(&conn)?;
+        Ok(applied.len())
+    }
+
+    /// Retrieves entity count metrics across all tables in the database.
+    pub fn entity_counts(&self) -> Result<DatabaseEntityCounts, StorageError> {
+        let conn = self.lock()?;
+        let total_articles: usize =
+            conn.query_row("SELECT count(*) FROM articles", [], |r| r.get(0))?;
+        let total_tasks: usize = conn.query_row("SELECT count(*) FROM tasks", [], |r| r.get(0))?;
+        let total_contacts: usize =
+            conn.query_row("SELECT count(*) FROM contacts", [], |r| r.get(0))?;
+        let total_article_contacts: usize =
+            conn.query_row("SELECT count(*) FROM article_contacts", [], |r| r.get(0))?;
+        Ok(DatabaseEntityCounts {
+            total_articles,
+            total_tasks,
+            total_contacts,
+            total_article_contacts,
+        })
+    }
+
+    /// Returns the underlying SQLite library version.
+    #[must_use]
+    pub fn sqlite_version() -> &'static str {
+        rusqlite::version()
     }
 
     /// Returns a cloned `Arc<Mutex<Connection>>` for shared low-level access.
@@ -502,5 +595,36 @@ mod tests {
 
         // Contacts still exist
         assert_eq!(service.list_contacts().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn test_storage_service_diagnostics_and_counts() {
+        let service = StorageService::in_memory().expect("failed to init db");
+        assert!(service.is_in_memory());
+        assert_eq!(service.database_path(), None);
+        assert_eq!(service.database_file_size().unwrap(), None);
+        assert_eq!(service.current_schema_version().unwrap(), Some(1));
+        assert_eq!(service.applied_migrations_count().unwrap(), 1);
+        assert!(!StorageService::sqlite_version().is_empty());
+
+        let counts_empty = service.entity_counts().unwrap();
+        assert_eq!(counts_empty.total_articles, 0);
+        assert_eq!(counts_empty.total_tasks, 0);
+        assert_eq!(counts_empty.total_contacts, 0);
+        assert_eq!(counts_empty.total_article_contacts, 0);
+
+        let article = Article::new("test-article", "Test Article Headline");
+        let a = service.create_article(article).unwrap();
+        let task = Task::new(a.id, "Test task");
+        service.create_task(task).unwrap();
+        let contact = Contact::new("Test Contact");
+        let c = service.create_contact(contact).unwrap();
+        service.link_contact_to_article(a.id, c.id).unwrap();
+
+        let counts_populated = service.entity_counts().unwrap();
+        assert_eq!(counts_populated.total_articles, 1);
+        assert_eq!(counts_populated.total_tasks, 1);
+        assert_eq!(counts_populated.total_contacts, 1);
+        assert_eq!(counts_populated.total_article_contacts, 1);
     }
 }

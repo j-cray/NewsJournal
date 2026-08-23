@@ -219,6 +219,8 @@ impl AppState {
                         let settings = draft.to_settings();
                         self.settings = settings.clone();
                         self.theme_engine.set_mode(settings.theme_mode);
+                        self.theme_engine.set_high_contrast(draft.high_contrast);
+                        self.theme_engine.set_custom_accent(draft.custom_accent);
                         vec![
                             AppCommand::SaveSettings(settings),
                             AppCommand::EmitToast(ToastMessage::success(
@@ -396,6 +398,20 @@ impl AppState {
             AppMessage::SetCustomAccent(accent) => {
                 self.theme_engine.set_custom_accent(accent);
                 Vec::new()
+            }
+            AppMessage::ResetSettingsToDefaults => {
+                let default_settings = newsjournal_core::models::Settings::default();
+                self.settings = default_settings.clone();
+                self.theme_engine.set_mode(default_settings.theme_mode);
+                self.theme_engine.set_high_contrast(false);
+                self.theme_engine.set_custom_accent(None);
+                vec![
+                    AppCommand::SaveSettings(default_settings),
+                    AppCommand::EmitToast(ToastMessage::info(
+                        "Settings Reset",
+                        "Preferences restored to default values",
+                    )),
+                ]
             }
 
             // ==========================================

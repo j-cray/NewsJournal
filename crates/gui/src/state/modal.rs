@@ -316,6 +316,10 @@ impl ContactDraft {
 pub struct SettingsDraft {
     /// Active theme mode.
     pub theme_mode: ThemeMode,
+    /// High contrast accessibility flag.
+    pub high_contrast: bool,
+    /// Custom brand accent RGB override.
+    pub custom_accent: Option<(u8, u8, u8)>,
 }
 
 impl SettingsDraft {
@@ -324,6 +328,22 @@ impl SettingsDraft {
     pub fn from_settings(settings: &Settings) -> Self {
         Self {
             theme_mode: settings.theme_mode,
+            high_contrast: false,
+            custom_accent: None,
+        }
+    }
+
+    /// Creates a settings draft with explicit theme options.
+    #[must_use]
+    pub fn with_options(
+        settings: &Settings,
+        high_contrast: bool,
+        custom_accent: Option<(u8, u8, u8)>,
+    ) -> Self {
+        Self {
+            theme_mode: settings.theme_mode,
+            high_contrast,
+            custom_accent,
         }
     }
 
