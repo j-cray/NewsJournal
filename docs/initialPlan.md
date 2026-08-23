@@ -133,7 +133,7 @@ Based on the architectural alignment and design interview:
   - Fields for Name (required), Organization, Role, Phone, Email, and Notes.
   - Associated articles list showing all stories where this contact is tagged.
 - [x] **8.3 Direct Creation Button**: "Add Contact" button in the top action bar of the Contacts page.
-- [ ] **8.4 Contact Deletion & Unlink Safety**: Confirmations when deleting a contact that is linked to active stories.
+- [x] **8.4 Contact Deletion & Unlink Safety**: Confirmations when deleting a contact that is linked to active stories.
 
 ### Phase 9: Deadline Tracking, Overdue Engine & Visual Alert System
 - [ ] **9.1 Real-Time Deadline Monitor**: Background timer / tick subscription in the GUI runtime to re-evaluate overdue status every minute.

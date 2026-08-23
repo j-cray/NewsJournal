@@ -21,7 +21,7 @@ This document serves as the living roadmap tracking project milestones, current 
 | **Phase 5** | Articles Kanban Board (6 Production Stages) & Drag-and-Drop | ✅ Complete | Linux & macOS |
 | **Phase 6** | Article Creation & Edit Glass Modal / Drawer | ✅ Complete | Linux & macOS |
 | **Phase 7** | Tasks Kanban Board & Article-Task Synchronization | ✅ Complete | Linux & macOS |
-| **Phase 8** | Contacts Directory & Article Tagging System | 🔄 In Progress | Linux & macOS |
+| **Phase 8** | Contacts Directory & Article Tagging System | ✅ Complete | Linux & macOS |
 | **Phase 9** | Real-Time Deadline Tracking & Overdue Alert Engine | ⏳ In Planning | Linux & macOS |
 | **Phase 10** | Platform Packaging, Cross-Compilation & Verification | ⏳ In Planning | Linux (COSMIC) & macOS |
 
@@ -87,5 +87,6 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Contacts Directory List View with multi-column sorting and multi-field search (Task 8.1).
 - [x] Implement Contact Creation & Editing Drawer with live validation and associated stories (Task 8.2).
 - [x] Implement Direct Creation Button ("Add Contact") in top action bar and platform toolbars (Task 8.3).
+- [x] Implement Contact Deletion & Unlink Safety with active story link warnings (Task 8.4).
 
 
