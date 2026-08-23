@@ -137,6 +137,24 @@ impl MacosApp {
         Ok(())
     }
 
+    /// Dispatches a keyboard shortcut key event through the application shortcut resolver.
+    /// Returns `Ok(true)` if a shortcut was resolved and dispatched, or `Ok(false)` otherwise.
+    pub fn handle_key_event(
+        &mut self,
+        key: &str,
+        modifiers: crate::navigation::NavKeyModifiers,
+    ) -> Result<bool, StorageError> {
+        let is_macos = true;
+        if let Some(msg) =
+            crate::navigation::resolve_app_shortcut(key, modifiers, is_macos, self.state())
+        {
+            self.dispatch(msg)?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
     /// Periodic background tick event (re-evaluates deadlines and system appearance changes).
     pub fn tick(&mut self) -> Result<(), StorageError> {
         if let Some(is_dark) = self.theme_watcher.check_for_change() {

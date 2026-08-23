@@ -6,6 +6,7 @@ use serde::Serialize;
 use crate::state::modal::ModalState;
 use crate::state::AppState;
 use crate::theme::ResolvedTheme;
+use crate::views::article_form::ValidationTooltipViewModel;
 
 /// Layout placement and presentation style for in-app glass overlays.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Default)]
@@ -354,6 +355,14 @@ pub struct ModalFooterViewModel {
     pub validation_error_count: usize,
     /// Optional summary validation hint.
     pub validation_hint: Option<String>,
+    /// Tooltip text for the primary save/submit action button.
+    pub save_tooltip: String,
+    /// Tooltip text for the secondary cancel/dismiss action button.
+    pub cancel_tooltip: String,
+    /// All active field validation error tooltips.
+    pub validation_tooltips: Vec<ValidationTooltipViewModel>,
+    /// Whether the active modal can be saved/submitted.
+    pub can_save: bool,
 }
 
 impl ModalFooterViewModel {
@@ -372,76 +381,172 @@ impl ModalFooterViewModel {
                 secondary_shortcut: "Esc",
                 validation_error_count: 0,
                 validation_hint: None,
+                save_tooltip: String::new(),
+                cancel_tooltip: "Esc".to_string(),
+                validation_tooltips: Vec::new(),
+                can_save: false,
             },
 
             ModalState::ArticleForm(draft) => {
                 let err_count = draft.validation_errors.len();
                 let is_edit = draft.id.is_some();
+                let is_empty_required =
+                    draft.slug.trim().is_empty() || draft.headline.trim().is_empty();
+                let can_save = err_count == 0 && !is_empty_required;
+
                 let hint = if err_count > 0 {
                     Some(format!("{err_count} required field(s) need attention"))
+                } else if is_empty_required {
+                    Some("Fill in headline and slug to save".to_string())
                 } else {
                     None
                 };
 
+                let primary_label = if is_edit {
+                    "Save Changes"
+                } else {
+                    "Create Article"
+                };
+
+                let save_tooltip = if can_save {
+                    format!("{primary_label} ({save_shortcut})")
+                } else if err_count > 0 {
+                    format!("Cannot save: {err_count} required field(s) need attention ({save_shortcut})")
+                } else {
+                    format!("Cannot save: required fields are empty ({save_shortcut})")
+                };
+
+                let mut validation_tooltips = Vec::new();
+                for (field, msg) in &draft.validation_errors {
+                    let field_static: &'static str = match field.as_str() {
+                        "slug" => "slug",
+                        "headline" => "headline",
+                        "color_hex" => "color_hex",
+                        _ => "general",
+                    };
+                    validation_tooltips
+                        .push(ValidationTooltipViewModel::error(field_static, msg.clone()));
+                }
+
                 Self {
-                    primary_label: if is_edit {
-                        "Save Changes"
-                    } else {
-                        "Create Article"
-                    },
+                    primary_label,
                     primary_shortcut: save_shortcut.to_string(),
                     primary_is_destructive: false,
-                    primary_is_disabled: err_count > 0,
+                    primary_is_disabled: !can_save,
                     secondary_label: "Cancel",
                     secondary_shortcut: "Esc",
                     validation_error_count: err_count,
                     validation_hint: hint,
+                    save_tooltip,
+                    cancel_tooltip: "Cancel and discard changes (Esc)".to_string(),
+                    validation_tooltips,
+                    can_save,
                 }
             }
 
             ModalState::TaskForm(draft) => {
                 let err_count = draft.validation_errors.len();
                 let is_edit = draft.id.is_some();
+                let is_empty_required = draft.title.trim().is_empty() || draft.article_id.is_none();
+                let can_save = err_count == 0 && !is_empty_required;
+
                 let hint = if err_count > 0 {
                     Some(format!("{err_count} field(s) need attention"))
+                } else if is_empty_required {
+                    Some("Enter task title and select story".to_string())
                 } else {
                     None
                 };
 
+                let primary_label = if is_edit { "Save Task" } else { "Create Task" };
+                let save_tooltip = if can_save {
+                    format!("{primary_label} ({save_shortcut})")
+                } else if err_count > 0 {
+                    format!("Cannot save: {err_count} field(s) need attention ({save_shortcut})")
+                } else {
+                    format!("Cannot save: task title is required ({save_shortcut})")
+                };
+
+                let mut validation_tooltips = Vec::new();
+                for (field, msg) in &draft.validation_errors {
+                    let field_static: &'static str = match field.as_str() {
+                        "title" => "title",
+                        "article_id" => "article_id",
+                        _ => "general",
+                    };
+                    validation_tooltips
+                        .push(ValidationTooltipViewModel::error(field_static, msg.clone()));
+                }
+
                 Self {
-                    primary_label: if is_edit { "Save Task" } else { "Create Task" },
+                    primary_label,
                     primary_shortcut: save_shortcut.to_string(),
                     primary_is_destructive: false,
-                    primary_is_disabled: err_count > 0,
+                    primary_is_disabled: !can_save,
                     secondary_label: "Cancel",
                     secondary_shortcut: "Esc",
                     validation_error_count: err_count,
                     validation_hint: hint,
+                    save_tooltip,
+                    cancel_tooltip: "Cancel and discard changes (Esc)".to_string(),
+                    validation_tooltips,
+                    can_save,
                 }
             }
 
             ModalState::ContactForm(draft) => {
                 let err_count = draft.validation_errors.len();
                 let is_edit = draft.id.is_some();
+                let is_empty_required = draft.name.trim().is_empty();
+                let can_save = err_count == 0 && !is_empty_required;
+
                 let hint = if err_count > 0 {
                     Some(format!("{err_count} field(s) need attention"))
+                } else if is_empty_required {
+                    Some("Enter contact name to save".to_string())
                 } else {
                     None
                 };
 
+                let primary_label = if is_edit {
+                    "Save Contact"
+                } else {
+                    "Create Contact"
+                };
+
+                let save_tooltip = if can_save {
+                    format!("{primary_label} ({save_shortcut})")
+                } else if err_count > 0 {
+                    format!("Cannot save: {err_count} field(s) need attention ({save_shortcut})")
+                } else {
+                    format!("Cannot save: contact name is required ({save_shortcut})")
+                };
+
+                let mut validation_tooltips = Vec::new();
+                for (field, msg) in &draft.validation_errors {
+                    let field_static: &'static str = match field.as_str() {
+                        "name" => "name",
+                        "email" => "email",
+                        "phone" => "phone",
+                        _ => "general",
+                    };
+                    validation_tooltips
+                        .push(ValidationTooltipViewModel::error(field_static, msg.clone()));
+                }
+
                 Self {
-                    primary_label: if is_edit {
-                        "Save Contact"
-                    } else {
-                        "Create Contact"
-                    },
+                    primary_label,
                     primary_shortcut: save_shortcut.to_string(),
                     primary_is_destructive: false,
-                    primary_is_disabled: err_count > 0,
+                    primary_is_disabled: !can_save,
                     secondary_label: "Cancel",
                     secondary_shortcut: "Esc",
                     validation_error_count: err_count,
                     validation_hint: hint,
+                    save_tooltip,
+                    cancel_tooltip: "Cancel and discard changes (Esc)".to_string(),
+                    validation_tooltips,
+                    can_save,
                 }
             }
 
@@ -454,6 +559,10 @@ impl ModalFooterViewModel {
                 secondary_shortcut: "Esc",
                 validation_error_count: 0,
                 validation_hint: None,
+                save_tooltip: "Save preferences and close (Esc)".to_string(),
+                cancel_tooltip: "Close settings (Esc)".to_string(),
+                validation_tooltips: Vec::new(),
+                can_save: true,
             },
 
             ModalState::ConfirmDeleteArticle { .. }
@@ -467,6 +576,10 @@ impl ModalFooterViewModel {
                 secondary_shortcut: "Esc",
                 validation_error_count: 0,
                 validation_hint: None,
+                save_tooltip: "Permanently delete item (Enter)".to_string(),
+                cancel_tooltip: "Cancel and keep item (Esc)".to_string(),
+                validation_tooltips: Vec::new(),
+                can_save: true,
             },
         }
     }

@@ -445,8 +445,14 @@ impl AppState {
                                 }
                             }
                         } else {
+                            let err_count = draft.validation_errors.len();
                             self.modal = ModalState::ArticleForm(draft);
-                            Vec::new()
+                            vec![AppCommand::EmitToast(ToastMessage::warning(
+                                "Validation Error",
+                                format!(
+                                    "{err_count} required field(s) need attention before saving"
+                                ),
+                            ))]
                         }
                     }
                     ModalState::TaskForm(mut draft) => {
@@ -468,8 +474,12 @@ impl AppState {
                                 }
                             }
                         } else {
+                            let err_count = draft.validation_errors.len();
                             self.modal = ModalState::TaskForm(draft);
-                            Vec::new()
+                            vec![AppCommand::EmitToast(ToastMessage::warning(
+                                "Validation Error",
+                                format!("{err_count} field(s) need attention before saving"),
+                            ))]
                         }
                     }
                     ModalState::ContactForm(mut draft) => {
@@ -491,8 +501,12 @@ impl AppState {
                                 }
                             }
                         } else {
+                            let err_count = draft.validation_errors.len();
                             self.modal = ModalState::ContactForm(draft);
-                            Vec::new()
+                            vec![AppCommand::EmitToast(ToastMessage::warning(
+                                "Validation Error",
+                                format!("{err_count} field(s) need attention before saving"),
+                            ))]
                         }
                     }
                     ModalState::SettingsDrawer(draft) => {

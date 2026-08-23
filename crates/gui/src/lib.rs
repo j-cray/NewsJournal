@@ -14,7 +14,10 @@ pub mod views;
 
 pub use commands::{AppCommand, CommandExecutor};
 pub use message::AppMessage;
-pub use navigation::NavTab;
+pub use navigation::{
+    resolve_app_shortcut, resolve_modal_shortcut, resolve_nav_shortcut, ModalKeyAction,
+    NavKeyAction, NavKeyModifiers, NavTab,
+};
 pub use platform::cosmic;
 pub use platform::macos;
 pub use runtime::EventLoop;

@@ -17,6 +17,73 @@ pub const MAX_HEADLINE_LENGTH: usize = 250;
 /// Default target time of day for deadline presets (17:00 / 5:00 PM).
 pub const DEFAULT_DEADLINE_HOUR: u32 = 17;
 
+/// Validation severity level for visual and screen reader presentation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub enum ValidationSeverity {
+    /// Blocking error preventing saving/submission.
+    #[default]
+    Error,
+    /// Non-blocking warning (e.g. deadline due very soon).
+    Warning,
+    /// Informational guidance hint.
+    Info,
+    /// Successful valid checkmark.
+    Success,
+}
+
+/// Presentation model for a contextual validation error tooltip / badge.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ValidationTooltipViewModel {
+    /// Identifier of the target input field (e.g. "slug", "headline", "color_hex", "inline_name").
+    pub field_id: &'static str,
+    /// User-friendly error message or guidance text.
+    pub message: String,
+    /// Validation severity level.
+    pub severity: ValidationSeverity,
+    /// Visual icon emoji (e.g. "⚠️", "❌", "ℹ️", "✅").
+    pub icon_emoji: &'static str,
+    /// Whether the tooltip is currently active and visible.
+    pub is_visible: bool,
+}
+
+impl ValidationTooltipViewModel {
+    /// Constructs a new error tooltip.
+    #[must_use]
+    pub fn error(field_id: &'static str, message: impl Into<String>) -> Self {
+        Self {
+            field_id,
+            message: message.into(),
+            severity: ValidationSeverity::Error,
+            icon_emoji: "⚠️",
+            is_visible: true,
+        }
+    }
+
+    /// Constructs a new warning tooltip.
+    #[must_use]
+    pub fn warning(field_id: &'static str, message: impl Into<String>) -> Self {
+        Self {
+            field_id,
+            message: message.into(),
+            severity: ValidationSeverity::Warning,
+            icon_emoji: "⚠️",
+            is_visible: true,
+        }
+    }
+
+    /// Constructs an informational guidance tooltip.
+    #[must_use]
+    pub fn info(field_id: &'static str, message: impl Into<String>) -> Self {
+        Self {
+            field_id,
+            message: message.into(),
+            severity: ValidationSeverity::Info,
+            icon_emoji: "ℹ️",
+            is_visible: true,
+        }
+    }
+}
+
 /// Sizing and visual presentation view model for the unique Slug field.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ArticleSlugFieldViewModel {
@@ -30,6 +97,8 @@ pub struct ArticleSlugFieldViewModel {
     pub char_count: usize,
     /// Active validation error message (if any).
     pub error: Option<String>,
+    /// Contextual validation error tooltip (if any).
+    pub tooltip: Option<ValidationTooltipViewModel>,
     /// Whether the slug format is currently valid and non-empty.
     pub is_valid: bool,
     /// Whether the slug collides with an existing story in the database.
@@ -51,6 +120,8 @@ pub struct ArticleHeadlineFieldViewModel {
     pub char_count: usize,
     /// Active validation error message (if any).
     pub error: Option<String>,
+    /// Contextual validation error tooltip (if any).
+    pub tooltip: Option<ValidationTooltipViewModel>,
     /// Whether the headline is non-empty and within limits.
     pub is_valid: bool,
 }
@@ -286,6 +357,8 @@ pub struct ArticleColorPickerViewModel {
     pub swatches: Vec<ColorSwatchViewModel>,
     /// Custom hex input validation error (if any).
     pub custom_hex_error: Option<String>,
+    /// Contextual validation error tooltip (if any).
+    pub tooltip: Option<ValidationTooltipViewModel>,
 }
 
 /// Presentation model for a single contact pill / chip in the Article Form.
@@ -371,10 +444,16 @@ pub struct InlineContactFormViewModel {
     pub notes_value: String,
     /// Name field validation error (if any).
     pub name_error: Option<String>,
+    /// Name field validation tooltip (if error).
+    pub name_tooltip: Option<ValidationTooltipViewModel>,
     /// Email field validation error (if any).
     pub email_error: Option<String>,
+    /// Email field validation tooltip (if error).
+    pub email_tooltip: Option<ValidationTooltipViewModel>,
     /// Phone field validation error (if any).
     pub phone_error: Option<String>,
+    /// Phone field validation tooltip (if error).
+    pub phone_tooltip: Option<ValidationTooltipViewModel>,
     /// Whether the inline form is currently valid and ready to create.
     pub is_valid: bool,
 }
@@ -484,6 +563,8 @@ pub struct ArticleTasksSectionViewModel {
     pub quick_task_placeholder: &'static str,
     /// Validation error for the quick-task input field (if any).
     pub quick_task_error: Option<String>,
+    /// Validation tooltip for the quick-task input field (if error).
+    pub quick_task_tooltip: Option<ValidationTooltipViewModel>,
     /// Whether the quick-task input is non-empty and valid.
     pub is_quick_add_valid: bool,
     /// Empty state guidance message if no tasks exist.
@@ -523,6 +604,16 @@ pub struct ArticleFormViewModel {
     pub total_error_count: usize,
     /// Formatted error summary string (if errors exist).
     pub error_summary: Option<String>,
+    /// All active field validation error tooltips in logical reading order.
+    pub validation_tooltips: Vec<ValidationTooltipViewModel>,
+}
+
+impl ArticleFormViewModel {
+    /// Returns all active validation error tooltips in logical field reading order.
+    #[must_use]
+    pub fn all_validation_tooltips(&self) -> Vec<ValidationTooltipViewModel> {
+        self.validation_tooltips.clone()
+    }
 }
 
 /// Builds the complete `ArticleFormViewModel` from current application state and active draft.
@@ -546,6 +637,9 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
             None
         }
     });
+    let slug_tooltip = slug_error
+        .as_ref()
+        .map(|err| ValidationTooltipViewModel::error("slug", err.clone()));
 
     let slug_field = ArticleSlugFieldViewModel {
         value: draft.slug.clone(),
@@ -555,12 +649,17 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         is_valid: slug_error.is_none() && !clean_slug.is_empty(),
         is_collision,
         error: slug_error,
+        tooltip: slug_tooltip,
         help_text: "Unique story identifier used for filesystem references and tags. Lowercase alphanumeric and hyphens.",
     };
 
     // 2. Build Headline field view model
     let headline_error = draft.validation_errors.get("headline").cloned();
     let headline_char_count = draft.headline.chars().count();
+    let headline_tooltip = headline_error
+        .as_ref()
+        .map(|err| ValidationTooltipViewModel::error("headline", err.clone()));
+
     let headline_field = ArticleHeadlineFieldViewModel {
         value: draft.headline.clone(),
         placeholder: "Enter story headline...",
@@ -568,6 +667,7 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         char_count: headline_char_count,
         is_valid: headline_error.is_none() && !draft.headline.trim().is_empty(),
         error: headline_error,
+        tooltip: headline_tooltip,
     };
 
     // 3. Build Description field view model
@@ -795,6 +895,9 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         .collect();
 
     let custom_hex_error = draft.validation_errors.get("color_hex").cloned();
+    let custom_hex_tooltip = custom_hex_error
+        .as_ref()
+        .map(|err| ValidationTooltipViewModel::error("color_hex", err.clone()));
 
     let color_picker = ArticleColorPickerViewModel {
         selected_hex,
@@ -804,6 +907,7 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         is_custom: draft.is_custom_color,
         swatches,
         custom_hex_error,
+        tooltip: custom_hex_tooltip,
     };
 
     // 7. Build Contact Tagging sub-section view model
@@ -853,8 +957,20 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
 
     let inline_form = draft.inline_contact.as_ref().map(|ic| {
         let name_error = ic.validation_errors.get("name").cloned();
+        let name_tooltip = name_error
+            .as_ref()
+            .map(|err| ValidationTooltipViewModel::error("inline_name", err.clone()));
+
         let email_error = ic.validation_errors.get("email").cloned();
+        let email_tooltip = email_error
+            .as_ref()
+            .map(|err| ValidationTooltipViewModel::error("inline_email", err.clone()));
+
         let phone_error = ic.validation_errors.get("phone").cloned();
+        let phone_tooltip = phone_error
+            .as_ref()
+            .map(|err| ValidationTooltipViewModel::error("inline_phone", err.clone()));
+
         let is_valid = !ic.name.trim().is_empty()
             && name_error.is_none()
             && email_error.is_none()
@@ -868,8 +984,11 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
             email_value: ic.email.clone(),
             notes_value: ic.notes.clone(),
             name_error,
+            name_tooltip,
             email_error,
+            email_tooltip,
             phone_error,
+            phone_tooltip,
             is_valid,
         }
     });
@@ -947,6 +1066,9 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
             .err()
             .map(|e| e.to_string())
     };
+    let quick_task_tooltip = quick_task_error
+        .as_ref()
+        .map(|err| ValidationTooltipViewModel::error("quick_task", err.clone()));
     let is_quick_add_valid = !quick_input_clean.is_empty() && quick_task_error.is_none();
 
     let empty_tasks_message = if total_tasks_count == 0 {
@@ -965,6 +1087,7 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         quick_task_placeholder:
             "Add a task for this story (e.g. Call city auditor, verify records)...",
         quick_task_error,
+        quick_task_tooltip,
         is_quick_add_valid,
         empty_state_message: empty_tasks_message,
     };
@@ -986,6 +1109,31 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         None
     };
 
+    let mut validation_tooltips = Vec::new();
+    if let Some(ref t) = slug_field.tooltip {
+        validation_tooltips.push(t.clone());
+    }
+    if let Some(ref t) = headline_field.tooltip {
+        validation_tooltips.push(t.clone());
+    }
+    if let Some(ref t) = color_picker.tooltip {
+        validation_tooltips.push(t.clone());
+    }
+    if let Some(ref inline) = contacts_section.inline_form {
+        if let Some(ref t) = inline.name_tooltip {
+            validation_tooltips.push(t.clone());
+        }
+        if let Some(ref t) = inline.email_tooltip {
+            validation_tooltips.push(t.clone());
+        }
+        if let Some(ref t) = inline.phone_tooltip {
+            validation_tooltips.push(t.clone());
+        }
+    }
+    if let Some(ref t) = tasks_section.quick_task_tooltip {
+        validation_tooltips.push(t.clone());
+    }
+
     ArticleFormViewModel {
         is_edit,
         article_id: draft.id,
@@ -1002,5 +1150,6 @@ pub fn build_article_form_view(state: &AppState, draft: &ArticleDraft) -> Articl
         is_submittable,
         total_error_count: total_errors,
         error_summary,
+        validation_tooltips,
     }
 }

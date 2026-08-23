@@ -110,7 +110,7 @@ Based on the architectural alignment and design interview:
 - [x] **6.4 Inline Task Management Sub-Section**:
   - Checklist of existing tasks for this article with status checkboxes.
   - Quick-add input field to add new tasks directly to the article.
-- [ ] **6.5 Save & Cancel Actions**: Keyboard shortcuts (`Escape` to close, `Ctrl+S`/`Cmd+S` to save) and error validation tooltips.
+- [x] **6.5 Save & Cancel Actions**: Keyboard shortcuts (`Escape` to close, `Ctrl+S`/`Cmd+S` to save) and error validation tooltips.
 
 ### Phase 7: Tasks Kanban Board & Article-Task Synchronization
 - [ ] **7.1 Tasks Kanban Deck Layout**: 3-column workflow board:

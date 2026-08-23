@@ -263,6 +263,23 @@ pub enum NavKeyAction {
     LastTab,
 }
 
+/// High-level modal and drawer keyboard actions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ModalKeyAction {
+    /// Save and persist active modal form (Ctrl+S / ⌘S / Ctrl+Enter / ⌘Enter).
+    Save,
+    /// Cancel and close active modal or drawer (Escape).
+    Cancel,
+    /// Confirm prompt (Enter in delete confirmation dialog).
+    Confirm,
+    /// Close an open inline sub-form (Escape when inline contact form is open).
+    CloseInlineSubForm,
+}
+
+use crate::message::AppMessage;
+use crate::state::modal::ModalState;
+use crate::state::AppState;
+
 /// Resolves a keyboard key event and modifiers into a navigation action if matched.
 ///
 /// Supported shortcuts:
@@ -326,6 +343,129 @@ pub fn resolve_nav_shortcut(
         "k" | "K" if modifiers.alt => Some(NavKeyAction::PrevTab),
         _ => None,
     }
+}
+
+/// Resolves keyboard shortcuts for active modal or slide-over drawer overlays.
+///
+/// Supported modal shortcuts:
+/// - `Escape`: Closes active inline contact form if expanded in article draft, or closes the active modal.
+/// - `Primary+S` (Ctrl+S on Linux, ⌘S on macOS): Validates and submits the active draft.
+/// - `Primary+Enter` / `Primary+Return`: Submits and saves the active draft.
+/// - `Enter` / `Return` (without modifiers): Confirms destructive deletion prompts.
+#[must_use]
+pub fn resolve_modal_shortcut(
+    key: &str,
+    modifiers: NavKeyModifiers,
+    is_macos: bool,
+    modal: &ModalState,
+) -> Option<AppMessage> {
+    if !modal.is_open() {
+        return None;
+    }
+
+    let has_primary = modifiers.is_primary_modifier(is_macos);
+    let key_clean = key.trim();
+
+    // 1. Escape key handling
+    if key_clean.eq_ignore_ascii_case("Escape") || key_clean.eq_ignore_ascii_case("Esc") {
+        if let ModalState::ArticleForm(draft) = modal {
+            if draft.is_inline_contact_open() {
+                return Some(AppMessage::CloseArticleDraftInlineContact);
+            }
+        }
+        return Some(AppMessage::CloseModal);
+    }
+
+    // 2. Primary + S (Save / Submit)
+    if has_primary
+        && (key_clean.eq_ignore_ascii_case("s") || key_clean.eq_ignore_ascii_case("Save"))
+    {
+        return Some(AppMessage::SubmitModal);
+    }
+
+    // 3. Primary + Enter (Submit modal form)
+    if has_primary
+        && (key_clean.eq_ignore_ascii_case("Enter") || key_clean.eq_ignore_ascii_case("Return"))
+    {
+        return Some(AppMessage::SubmitModal);
+    }
+
+    // 4. Plain Enter in confirmation dialogs
+    if !has_primary
+        && !modifiers.alt
+        && !modifiers.shift
+        && (key_clean.eq_ignore_ascii_case("Enter") || key_clean.eq_ignore_ascii_case("Return"))
+        && matches!(
+            modal,
+            ModalState::ConfirmDeleteArticle { .. }
+                | ModalState::ConfirmDeleteTask { .. }
+                | ModalState::ConfirmDeleteContact { .. }
+        )
+    {
+        return Some(AppMessage::SubmitModal);
+    }
+
+    None
+}
+
+/// Unified keyboard shortcut resolution engine for the application.
+///
+/// Priority:
+/// 1. If a modal or drawer is open, modal actions (`Escape` to close, `Ctrl+S`/`⌘S` to save, `Enter` to confirm)
+///    take precedence and block underlying tab navigation shortcuts.
+/// 2. If no modal is open, global entity creation shortcuts and sidebar tab navigation shortcuts are evaluated.
+#[must_use]
+pub fn resolve_app_shortcut(
+    key: &str,
+    modifiers: NavKeyModifiers,
+    is_macos: bool,
+    state: &AppState,
+) -> Option<AppMessage> {
+    // 1. If a modal is currently open, resolve modal shortcut
+    if state.modal.is_open() {
+        if let Some(msg) = resolve_modal_shortcut(key, modifiers, is_macos, &state.modal) {
+            return Some(msg);
+        }
+        // Suppress background navigation while modal is active
+        return None;
+    }
+
+    let has_primary = modifiers.is_primary_modifier(is_macos);
+    let key_clean = key.trim();
+
+    // 2. Global creation shortcuts
+    if has_primary {
+        // Ctrl+N / ⌘N: New Article
+        if !modifiers.shift && key_clean.eq_ignore_ascii_case("n") {
+            return Some(AppMessage::OpenNewArticleModal);
+        }
+        // Ctrl+Shift+N / ⌘⇧N or Ctrl+T / ⌘T: New Task
+        if (modifiers.shift && key_clean.eq_ignore_ascii_case("n"))
+            || (!modifiers.shift && key_clean.eq_ignore_ascii_case("t"))
+        {
+            return Some(AppMessage::OpenNewTaskModal(None));
+        }
+        // Ctrl+Shift+C / ⌘⇧C: New Contact
+        if modifiers.shift && key_clean.eq_ignore_ascii_case("c") {
+            return Some(AppMessage::OpenNewContactModal);
+        }
+        // Ctrl+R / ⌘R: Refresh
+        if key_clean.eq_ignore_ascii_case("r") {
+            return Some(AppMessage::Refresh);
+        }
+    }
+
+    // F5: Refresh
+    if key_clean.eq_ignore_ascii_case("F5") {
+        return Some(AppMessage::Refresh);
+    }
+
+    // 3. Tab navigation shortcuts
+    if let Some(nav_action) = resolve_nav_shortcut(key, modifiers, is_macos) {
+        return Some(AppMessage::HandleNavKeyAction(nav_action));
+    }
+
+    None
 }
 
 #[cfg(test)]
