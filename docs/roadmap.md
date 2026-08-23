@@ -86,5 +86,6 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Task Creation & Editing Drawer with live parent article synchronization (Task 7.4).
 - [x] Implement Contacts Directory List View with multi-column sorting and multi-field search (Task 8.1).
 - [x] Implement Contact Creation & Editing Drawer with live validation and associated stories (Task 8.2).
+- [x] Implement Direct Creation Button ("Add Contact") in top action bar and platform toolbars (Task 8.3).
 
 
