@@ -129,7 +129,7 @@ Based on the architectural alignment and design interview:
 
 ### Phase 8: Contacts Directory & Tagging Manager
 - [x] **8.1 Contacts List View**: Clean, searchable, and sortable list/table view showing Name, Organization, Role, Email, Phone, and tagged Articles count.
-- [ ] **8.2 Contact Creation & Edit Drawer**:
+- [x] **8.2 Contact Creation & Edit Drawer**:
   - Fields for Name (required), Organization, Role, Phone, Email, and Notes.
   - Associated articles list showing all stories where this contact is tagged.
 - [ ] **8.3 Direct Creation Button**: "Add Contact" button in the top action bar of the Contacts page.

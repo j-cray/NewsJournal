@@ -85,5 +85,6 @@ This document serves as the living roadmap tracking project milestones, current 
 - [x] Implement Task Drag-and-Drop Movement Engine across To-Do, In Progress, and Complete columns (Task 7.3).
 - [x] Implement Task Creation & Editing Drawer with live parent article synchronization (Task 7.4).
 - [x] Implement Contacts Directory List View with multi-column sorting and multi-field search (Task 8.1).
+- [x] Implement Contact Creation & Editing Drawer with live validation and associated stories (Task 8.2).
 
 
