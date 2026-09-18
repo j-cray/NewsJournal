@@ -1,6 +1,7 @@
 # NewsJournal
 
-A pure Rust desktop application for journalists to organize story workflows, manage investigative beats, coordinate article tasks, track sources/contacts, and monitor publishing deadlines. Built with **COSMIC Frosted Glass** on Linux (`libcosmic`) and **Liquid Glass** on macOS (`iced` + native vibrancy).
+A pure Rust desktop application, vibe-code only and under development, for journalists to organize story workflows, manage investigative beats, coordinate article tasks, track sources/contacts, and monitor publishing deadlines. Built with **COSMIC Frosted Glass** on Linux (`libcosmic`) and **Liquid Glass** on macOS (`iced` + native vibrancy).
+
 
 ---
 
